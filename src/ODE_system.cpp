@@ -62,7 +62,15 @@ int compute_y_dot(realtype time, N_Vector y, N_Vector y_dot, void *data_)
                     hamiltonian += compute_EOM_binary_pairs_external_perturbation(particlesMap,p->index,f->index,time,false);
                 }
             }
-            
+
+            /* VRR-related perturbations */
+
+            if (p->VRR_model > 0) /* 0: no VRR perturbation */
+            {
+                hamiltonian += compute_VRR_perturbations(particlesMap,p->index,time);
+            }
+
+
             /* Pairwise PN corrections */
             if (p->include_pairwise_1PN_terms == 1)
             {

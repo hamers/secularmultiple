@@ -622,6 +622,45 @@ int get_tides_terms(int index, int *include_tidal_friction_terms, int *tides_met
     return 0;
 }
 
+/****************
+ * VRR          *
+ ****************/
+
+int set_VRR_properties(int index, int VRR_model, int VRR_include_mass_precession, double VRR_mass_precession_rate, 
+    double VRR_Omega_vec_x, double VRR_Omega_vec_y, double VRR_Omega_vec_z, 
+    double VRR_eta_20_init, double VRR_eta_a_22_init, double VRR_eta_b_22_init, double VRR_eta_a_21_init, double VRR_eta_b_21_init,
+    double VRR_eta_20_final, double VRR_eta_a_22_final, double VRR_eta_b_22_final, double VRR_eta_a_21_final, double VRR_eta_b_21_final,
+	double VRR_initial_time, double VRR_final_time)
+{
+	
+	if (index > highest_particle_index)
+    {
+        return -1;
+    }
+
+    Particle *p = particlesMap[index];
+    
+    p->VRR_model = VRR_model;
+    p->VRR_include_mass_precession = VRR_include_mass_precession;
+	p->VRR_mass_precession_rate = VRR_mass_precession_rate;
+	p->VRR_Omega_vec_x = VRR_Omega_vec_x;
+	p->VRR_Omega_vec_y = VRR_Omega_vec_y;
+	p->VRR_Omega_vec_z = VRR_Omega_vec_z;
+	p->VRR_eta_20_init = VRR_eta_20_init;
+	p->VRR_eta_a_22_init = VRR_eta_a_22_init;
+	p->VRR_eta_b_22_init = VRR_eta_b_22_init;
+	p->VRR_eta_a_21_init = VRR_eta_a_21_init;
+	p->VRR_eta_b_21_init = VRR_eta_b_21_init;
+	p->VRR_eta_20_final = VRR_eta_20_final;
+	p->VRR_eta_a_22_final = VRR_eta_a_22_final;
+	p->VRR_eta_b_22_final = VRR_eta_b_22_final;
+	p->VRR_eta_a_21_final = VRR_eta_a_21_final;
+	p->VRR_eta_b_21_final = VRR_eta_b_21_final;
+	p->VRR_initial_time = VRR_initial_time;
+	p->VRR_final_time = VRR_final_time;
+
+	return 0;
+}
 
 /****************
 /* root finding *

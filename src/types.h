@@ -356,6 +356,36 @@ inline double dot3(double a[3], double b[3])
     double result = (a[0]*b[0] + a[1]*b[1] + a[2]*b[2]);
     return result;
 }
+inline void matrix_on_vector( int N_x, int N_y, double M[][3], double v[], double result[] )
+{
+    
+    int i,j;
+
+    for (j=0; j<N_y; j++)
+    {
+        result[j] = 0.0;
+    }
+
+    for (j=0; j<N_y; j++)
+    {
+        for (i=0; i<N_x; i++)
+        {
+            result[j] += M[i][j]*v[i];
+        }
+    }
+}
+
+inline void scalar_times_matrix(int N_x, int N_y, double M[][3], double common_factor)
+{
+    int i,j;
+    for (i=0; i<N_x; i++)
+    {
+        for (j=0; j<N_y; j++)
+        {
+            M[i][j] *= common_factor;
+        }
+    }
+}
 #endif
 
 /* classes */
@@ -449,6 +479,29 @@ class Particle
     int is_external;
     double external_t_ref,external_e,external_r_p;
 
+    /* VRR */
+    int VRR_model;
+    //int VRR_include_GR_precession;
+    int VRR_include_mass_precession;
+    //int VRR_include_frame_dragging;
+    double VRR_mass_precession_rate;
+    double VRR_initial_time, VRR_final_time;
+    
+    /* Dipole model */
+    double VRR_Omega_vec_x,VRR_Omega_vec_y,VRR_Omega_vec_z;
+    
+    /* Distortion model */
+    //double VRR_dipole_fraction;
+    //double VRR_initial_distortion_axis_vec_x,VRR_initial_distortion_axis_vec_y,VRR_initial_distortion_axis_vec_z;
+    //double VRR_final_distortion_axis_vec_x,VRR_final_distortion_axis_vec_y,VRR_final_distortion_axis_vec_z;
+    //double VRR_AD_parameter,VRR_AM_parameter,VRR_AJ_parameter;
+    
+    /* Bar-Or model */
+    double VRR_eta_20_init,VRR_eta_a_22_init,VRR_eta_b_22_init,VRR_eta_a_21_init,VRR_eta_b_21_init;
+    double VRR_eta_20_final,VRR_eta_a_22_final,VRR_eta_b_22_final,VRR_eta_a_21_final,VRR_eta_b_21_final;
+    
+
+
     Particle(int index, int is_binary) : index(index), is_binary(is_binary)
     {
         /* default values */
@@ -495,6 +548,39 @@ class Particle
         external_r_p = 1.0;
         external_e = 10.0;
         
+        /* VRR */
+        VRR_model = 0;
+        //VRR_include_GR_precession = 0;
+        VRR_include_mass_precession = 0;
+        //VRR_include_frame_dragging = 0;
+        VRR_mass_precession_rate = 0.0;
+        VRR_initial_time = 0.0;
+        VRR_final_time = 1.0;
+        
+        VRR_Omega_vec_x = VRR_Omega_vec_y = VRR_Omega_vec_z = 0.0;
+        //VRR_dipole_fraction = 0.5;
+        //VRR_initial_distortion_axis_vec_x = 0.0;
+        //VRR_initial_distortion_axis_vec_y = 0.0;
+        //VRR_initial_distortion_axis_vec_z = 0.0;
+        //VRR_final_distortion_axis_vec_x = 0.0;
+        //VRR_final_distortion_axis_vec_y = 0.0;
+        //VRR_final_distortion_axis_vec_z = 0.0;
+        //VRR_AD_parameter = 0.0;
+        //VRR_AM_parameter = 0.0;
+        //VRR_AJ_parameter = 0.0;
+        
+        VRR_eta_20_init = 0.0;
+        VRR_eta_a_22_init = 0.0;
+        VRR_eta_b_22_init = 0.0;
+        VRR_eta_a_21_init = 0.0;
+        VRR_eta_b_21_init = 0.0;
+
+        VRR_eta_20_final = 0.0;
+        VRR_eta_a_22_final = 0.0;
+        VRR_eta_b_22_final = 0.0;
+        VRR_eta_a_21_final = 0.0;
+        VRR_eta_b_21_final = 0.0;
+
     }
 };
 #endif

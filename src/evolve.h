@@ -19,6 +19,7 @@
 #include "postnewtonian.h"
 #include "tides.h"
 #include "external.h"
+#include "VRR.h"
 
 extern "C"
 {
