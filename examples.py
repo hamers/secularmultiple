@@ -114,9 +114,9 @@ class examples():
         t_print = []
         
         t = 0.0
-        N = 2000
+        Nsteps = 2000
         tend = 3.0e8
-        dt = tend/float(N)
+        dt = tend/float(Nsteps)
         import time
         start = time.time()
         while t<=tend:
@@ -295,9 +295,9 @@ class examples():
         t_print = []
         
         t = 0.0
-        N = 1000
+        Nsteps = 1000
         tend = evaporation_timescale
-        dt_fixed = tend/float(N)
+        dt_fixed = tend/float(Nsteps)
         t_next_reorientation = VRR_reorientation_timestep
         
         import time
@@ -349,6 +349,283 @@ class examples():
             plot2.set_ylabel("$\mathrm{incl}_\mathrm{rel}/\mathrm{deg}$")
         fig.savefig("example2.pdf")
         pyplot.show()
+
+
+    def example3(self):
+        """
+        Example of an (N-1)-planet system with constant spacing in mutual Hill sphere
+        
+        """
+
+        code = SecularMultiple() ### initialize the code
+        CONST_G = code.CONST_G ### extract physical constants from the code
+        CONST_C = code.CONST_C
+        CONST_R_SUN = code.CONST_R_SUN
+        RJup = 0.1027922358015816*CONST_R_SUN
+        MJup = 0.0009546386983890755
+        day = 1.0/365.25
+        second = day/(24.0*3600.0)
+
+        N=5
+        m0 = 1.0
+        R0 = CONST_R_SUN
+        a1 = 1.0
+        mp = MJup
+        Rp = RJup
+
+        ei = 0.28
+        ii = ei
+        APi = 1.0e-10
+        LANi = 1.0e-10
+
+        X = (1.0/2.0)*pow(2.0*mp/3.0,1.0/3.0)
+        Delta = 10.0
+
+        Delta_min = ei/X
+        print 'Delta_min',Delta_min
+        
+        Nsteps = 100
+        tend = 1.0e6
+                
+        masses = [m0]
+        radii = [R0]
+        semimajor_axes = []
+        eccentricities = []
+        inclinations = []
+        APs = []
+        LANs = []
+        ai = a1        
+        for i in range(N-1):
+            masses.append(mp)
+            radii.append(Rp)
+            ai = ai*(1.0+Delta*X)/(1.0-Delta*X)
+                
+            semimajor_axes.append(ai)
+            eccentricities.append(ei)
+            inclinations.append(ii)
+            APs.append(APi)
+            LANs.append(LANi)
+            
+        print 'test',masses,semimajor_axes,eccentricities
+
+        
+        particles = Tools.create_nested_multiple(N, masses,semimajor_axes,eccentricities,inclinations,APs,LANs,radii=radii) 
+        orbits = [x for x in particles if x.is_binary==True]
+        for o in orbits:
+            o.check_for_physical_collision_or_orbit_crossing = True
+        N_orbits = len(orbits)
+        
+
+        #binaries[0].include_1PN_terms = True
+        code.add_particles(particles)
+        primary = code.particles[0]
+
+        code.enable_tides = False
+        code.enable_root_finding = True
+        
+        a_AU_print = [[] for x in range(N_orbits)]
+        e_print = [[] for x in range(N_orbits)]
+        INCL_print = [[] for x in range(N_orbits)]
+        rel_INCL_print = [[] for x in range(N_orbits)]
+        t_print = []
+        
+        t = 0.0
+        dt = tend/float(Nsteps)
+        import time
+        start = time.time()
+        while t<=tend:
+
+            code.evolve_model(t)
+            
+           
+        
+            print 't',t,'es',[o.e for o in orbits]
+            for i in range(N_orbits):
+                rel_INCL_print[i].append(orbits[i].INCL_parent)
+                a_AU_print[i].append(orbits[i].a)
+                e_print[i].append(orbits[i].e)
+                INCL_print[i].append(orbits[i].INCL)
+            t_print.append(t)
+
+            if code.flag == 2:
+                t = code.model_time
+                print 'root found at t=',t
+                break
+
+            t+=dt            
+        print 'wall time',time.time()-start
+        
+        t_print = np.array(t_print)
+        for i in range(N_orbits):
+            INCL_print[i] = np.array(INCL_print[i])
+            rel_INCL_print[i] = np.array(rel_INCL_print[i])
+            e_print[i] = np.array(e_print[i])
+            a_AU_print[i] = np.array(a_AU_print[i])
+        
+        from matplotlib import pyplot
+        fig=pyplot.figure(figsize=(8,8))
+        plot1=fig.add_subplot(2,1,1,yscale="log")
+        plot2=fig.add_subplot(2,1,2,yscale="linear")
+        colors=['k','r','g','y','b']
+        for i in range(N_orbits):
+            color=colors[i]
+            plot1.plot(1.0e-6*t_print,a_AU_print[i],color=color)
+            plot1.plot(1.0e-6*t_print,a_AU_print[i]*(1.0-e_print[i]),color=color)
+            plot1.plot(1.0e-6*t_print,a_AU_print[i]*(1.0+e_print[i]),color=color)
+            plot2.plot(1.0e-6*t_print,INCL_print[i]*180.0/np.pi,color=color)
+            
+            plot1.set_xlabel("$t/\mathrm{Myr}$")
+            plot2.set_xlabel("$t/\mathrm{Myr}$")
+            plot1.set_ylabel("$r_i/\mathrm{AU}$")
+            plot2.set_ylabel("$\mathrm{incl}_i/\mathrm{deg}$")
+        fig.savefig("example3.pdf")
+
+        pyplot.show()
+
+    def example4(self):
+        """
+        Example of an (N-1)-planet system with constant spacing in mutual Hill sphere, Delta
+        Calculate a series of systems with different Delta
+        """
+
+        code = SecularMultiple() ### initialize the code
+        CONST_G = code.CONST_G ### extract physical constants from the code
+        CONST_C = code.CONST_C
+        CONST_R_SUN = code.CONST_R_SUN
+        RJup = 0.1027922358015816*CONST_R_SUN
+        MJup = 0.0009546386983890755
+        day = 1.0/365.25
+        second = day/(24.0*3600.0)
+
+        N=5
+        m0 = 1.0
+        R0 = CONST_R_SUN
+        a1 = 1.0
+        mp = MJup
+        Rp = RJup
+        Porb1 = 2.0*np.pi*np.sqrt(a1**3/(CONST_G*(m0+mp)))
+
+        ei = 0.35
+        ii = ei
+        APi = 1.0e-10
+        LANi = 1.0e-10
+
+        X = (1.0/2.0)*pow(2.0*mp/3.0,1.0/3.0)
+
+        Delta_crit = ei/X
+        print 'Delta_crit',Delta_crit
+        Delta_min = np.amax([4.0,Delta_crit]) ### minimum allowed value of Delta to avoid orbit crossing at the onset
+        Delta_max = 12.0 ### maximum Delta considered
+        N_Delta = 10 ### number of points in Delta
+        
+        print 'Delta_min',Delta_min,'Delta_max',Delta_max
+        
+        Nsteps = 10
+        tend = 1.0e7
+                
+        instability_times = []
+        plot_Deltas = []
+        Deltas = np.linspace(1.1*Delta_min,Delta_max,N_Delta)
+        for index_Delta,Delta in enumerate(Deltas):
+            print 'index_Delta',index_Delta,'Delta',Delta
+            
+            masses = [m0]
+            radii = [R0]
+            semimajor_axes = []
+            eccentricities = []
+            inclinations = []
+            APs = []
+            LANs = []
+            ai = a1        
+            for i in range(N-1):
+                masses.append(mp)
+                radii.append(Rp)
+
+                semimajor_axes.append(ai)
+                eccentricities.append(ei)
+                inclinations.append(ii)
+                APs.append(APi)
+                LANs.append(LANi)
+
+                ai = ai*(1.0+Delta*X)/(1.0-Delta*X)                
+            
+            instability_time = determine_stability_time(tend,Nsteps,N, masses,semimajor_axes,eccentricities,inclinations,APs,LANs,radii)
+            instability_times.append(instability_time)
+            plot_Deltas.append(Delta)
+            
+            print 'instability_time',instability_time
+            
+            if instability_time == tend:
+                print 'instability time reached tend'
+                break
+                
+        plot_Deltas = np.array(plot_Deltas)
+        instability_times = np.array(instability_times)
+        
+        from matplotlib import pyplot
+        fig=pyplot.figure(figsize=(8,6))
+        plot1=fig.add_subplot(1,1,1,yscale="log")
+        colors=['k','r','g','y','b']
+        plot1.scatter(plot_Deltas,instability_times/Porb1,color='k')
+        plot1.plot(plot_Deltas,instability_times/Porb1,color='k')
+        plot1.set_xlabel("$\Delta$",fontsize=20)
+        plot1.set_ylabel("$t_\mathrm{c}/t_0$",fontsize=20)
+        plot1.set_title("$e_i=%s$"%ei,fontsize=20)
+        
+        fig.savefig("example4.pdf")
+        pyplot.show()
+
+
+def determine_stability_time(tend,Nsteps,N, masses,semimajor_axes,eccentricities,inclinations,APs,LANs,radii):
+
+    particles = Tools.create_nested_multiple(N, masses,semimajor_axes,eccentricities,inclinations,APs,LANs,radii=radii) 
+    orbits = [x for x in particles if x.is_binary==True]
+    for o in orbits:
+        o.check_for_physical_collision_or_orbit_crossing = True
+    N_orbits = len(orbits)
+    
+    #binaries[0].include_1PN_terms = True
+    code = SecularMultiple() ### initialize the code
+
+    code.add_particles(particles)
+    primary = code.particles[0]
+
+    code.enable_tides = False
+    code.enable_root_finding = True
+    
+    a_AU_print = [[] for x in range(N_orbits)]
+    e_print = [[] for x in range(N_orbits)]
+    INCL_print = [[] for x in range(N_orbits)]
+    rel_INCL_print = [[] for x in range(N_orbits)]
+    t_print = []
+    
+    t = 0.0
+    dt = tend/float(Nsteps)
+    import time
+    start = time.time()
+    while t<tend:
+        t+=dt            
+        code.evolve_model(t)
+    
+        #print 't',t,'es',[o.e for o in orbits]
+        for i in range(N_orbits):
+            rel_INCL_print[i].append(orbits[i].INCL_parent)
+            a_AU_print[i].append(orbits[i].a)
+            e_print[i].append(orbits[i].e)
+            INCL_print[i].append(orbits[i].INCL)
+        t_print.append(t)
+
+        if code.flag == 2:
+            t = code.model_time
+            #print 'root found at t=',t
+            break
+
+        
+    #print 'wall time',time.time()-start
+    code.reset()
+
+    return t
+        
 
 def reorientation_function(VRR_model,VRR_timescale,next_reorientation_time,orbit):
 

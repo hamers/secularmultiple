@@ -784,6 +784,16 @@ int apply_user_specified_instantaneous_perturbation_interface()
     return 0;
 }
 
+
+int clear_internal_particles()
+{
+    //printf("clear_internal_particles\n");
+    particlesMap.clear();
+	highest_particle_index = 0;
+    return 0;
+}
+
+
 int set_positions_and_velocities_interface()
 {
     set_positions_and_velocities(&particlesMap);

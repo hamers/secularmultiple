@@ -39,7 +39,9 @@ class SecularMultiple(object):
         self.model_time = 0.0
         self.time_step = 0.0
         self.relative_energy_error = 0.0
-
+        self.flag = 0
+        self.error_code = 0
+        
         self.enable_tides = False
         self.enable_root_finding = False
         self.enable_VRR = False
@@ -151,6 +153,8 @@ class SecularMultiple(object):
         self.lib.set_VRR_properties.argtypes = (ctypes.c_int,ctypes.c_int,ctypes.c_int,ctypes.c_double,ctypes.c_double,ctypes.c_double,ctypes.c_double,ctypes.c_double,ctypes.c_double,ctypes.c_double,ctypes.c_double,ctypes.c_double,ctypes.c_double,ctypes.c_double,ctypes.c_double,ctypes.c_double,ctypes.c_double,ctypes.c_double,ctypes.c_double)
         self.lib.set_VRR_properties.restype = ctypes.c_int
 
+        self.lib.clear_internal_particles.argtypes = ()
+        self.lib.clear_internal_particles.restype = ctypes.c_int
 
     ###############
     
@@ -289,7 +293,7 @@ class SecularMultiple(object):
                 ctypes.byref(physical_collision_or_orbit_crossing_has_occurred),ctypes.byref(minimum_periapse_distance_has_occurred),ctypes.byref(RLOF_at_pericentre_has_occurred))
             particle.secular_breakdown_has_occurred = secular_breakdown_has_occurred.value
             particle.dynamical_instability_has_occurred = dynamical_instability_has_occurred.value
-            physical_collision_or_orbit_crossing_has_occurred = physical_collision_or_orbit_crossing_has_occurred.value
+            particle.physical_collision_or_orbit_crossing_has_occurred = physical_collision_or_orbit_crossing_has_occurred.value
             particle.minimum_periapse_distance_has_occurred = minimum_periapse_distance_has_occurred.value
             particle.RLOF_at_pericentre_has_occurred = RLOF_at_pericentre_has_occurred.value
             
@@ -331,6 +335,10 @@ class SecularMultiple(object):
 
     def __set_constants_in_code(self):
         self.lib.set_constants(self.__CONST_G,self.__CONST_C,self.__CONST_M_SUN,self.__CONST_R_SUN,self.__CONST_L_SUN)
+
+    def reset(self):
+        self.__init__()
+        self.lib.clear_internal_particles()
 
     @property
     def CONST_G(self):
