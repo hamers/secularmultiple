@@ -184,10 +184,10 @@ class examples():
 
         ei = 0.28
         ii = ei
-        APi = 1.0e-10
-        LANi = 1.0e-10
+        APi = 1.0e-10 ### arguments of periapsis
+        LANi = 1.0e-10 ### longitudes of ascending node
 
-        X = (1.0/2.0)*pow(2.0*mp/3.0,1.0/3.0)
+        X = (1.0/2.0)*pow(2.0*mp/(3.0*m0),1.0/3.0)
         Delta = 10.0
 
         Delta_min = ei/X
@@ -225,7 +225,7 @@ class examples():
         N_orbits = len(orbits)
         
 
-        #binaries[0].include_1PN_terms = True
+        #orbits[0].include_1PN_terms = True
         code.add_particles(particles)
         primary = code.particles[0]
 
@@ -246,8 +246,6 @@ class examples():
 
             code.evolve_model(t)
             
-           
-        
             print 't',t,'es',[o.e for o in orbits]
             for i in range(N_orbits):
                 rel_INCL_print[i].append(orbits[i].INCL_parent)
