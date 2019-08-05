@@ -373,6 +373,165 @@ class examples():
             pyplot.show()
 
 
+    def example3(self):
+        """
+        Similar to example 2, now recording maximum eccentricity e_max at different inner semimajor axes a1, and plotting
+        e_max as a function of a1
+        """
+
+        code = SecularMultiple() ### initialize the code
+        CONST_G = code.CONST_G ### extract physical constants from the code
+        CONST_C = code.CONST_C
+        CONST_R_SUN = code.CONST_R_SUN
+        RJup = 0.1027922358015816*CONST_R_SUN
+        MJup = 0.0009546386983890755
+        day = 1.0/365.25
+        second = day/(24.0*3600.0)
+        meter = 1.0/1.496e+11
+
+        ### Input parameters ###
+        m1 = 1.0 ### stellar mass
+        m2 = MJup ### planetary mass
+        m3 = 4.0e6 ### GC MBH mass
+        
+        a1_min = 1.0e-2
+        a1_max = 1.0e0
+        N_a1 = 10
+        a2 = 1.0e4 ### typical for S-star 
+        e1 = 0.01
+        e2 = 0.1
+        i1 = 0.01*np.pi/180.0
+        i2 = 55.0*np.pi/180.0
+        AP1 = 0.01*np.pi/180.0
+        AP2 = 0.01*np.pi/180.0
+        LAN1 = 0.01*np.pi/180.0
+        LAN2 = 0.01*np.pi/180.0
+
+        R1 = 1.0*CONST_R_SUN
+        R2 = 1.0*RJup
+        R3 = CONST_G*m3/(CONST_C**2)
+
+        m_star = 1.0 ### average stellar mass in the background
+        gamma = 3.0/2.0 ### slope of stellar background
+        VRR_model = 3
+
+        tmax = 1.0e8 ### maximum integration time
+
+        ### Simulation parameters ###
+        VRR_include_mass_precession = True
+        include_inner_1PN_terms = False
+        include_outer_1PN_terms = True
+        
+        
+        e_maxs = []
+        a1_values = pow(10.0,np.linspace(np.log10(a1_min),np.log10(a1_max),N_a1))
+        for index_a1,a1 in enumerate(a1_values):
+            print '='*50
+            print 'a1/AU',a1
+            
+            ### Process parameters ###
+            P1 = 2.0*np.pi*np.sqrt(a1**3/(CONST_G*(m1+m2)))
+            P2 = 2.0*np.pi*np.sqrt(a2**3/(CONST_G*(m1+m2+m3)))
+
+            masses = [m1,m2,m3]
+            radii = [R1,R2,R3]
+            semimajor_axes = [a1,a2]
+            eccentricities = [e1,e2]
+            inclinations = [i1,i2]
+            APs = [AP1,AP2]
+            LANs = [LAN1,LAN2]
+
+            N = len(masses)
+            particles = Tools.create_nested_multiple(N, masses,semimajor_axes,eccentricities,inclinations,APs,LANs,radii=radii) 
+            orbits = [x for x in particles if x.is_binary==True]
+            N_orbits = len(orbits)
+
+            for o in orbits:
+                o.check_for_physical_collision_or_orbit_crossing = True
+
+            inner_orbit = orbits[0]
+            outer_orbit = orbits[1]
+            
+            c1 = 4.8
+            c2 = -2.9
+            log10_sigma_h_km_s = (np.log10(m3) - c2)/c1
+            
+            sigma_h_km_s = pow(10.0,log10_sigma_h_km_s)
+            sigma_h = 1.0e3*sigma_h_km_s*meter/second
+            print 'sigma_h_km_s',sigma_h_km_s,'sigma_h',sigma_h
+
+#       K_12 = K_12_function(gamma)
+#        K_32 = K_32_function(gamma)
+#        C_NRR = ((3.0*numpy.pi)/(64.0))*1.0/( K_12 - (1.0/5.0)*K_32 + (5.0*numpy.pi/8.0)*(1.0/(2.0*gamma-1.0)) )
+            
+            r_h = CONST_G*m3*(1.0/(sigma_h**2*(1.0+gamma)))*(1.0 + (1.0 + gamma)/(gamma - 1.0))
+        
+            r_0 = r_h
+            n_0 = (2.0*m3/m_star)*((3.0-gamma)/(4.0*np.pi*r_h**3))
+
+            r = a2
+            rho_star = compute_rho_star_r(r,gamma,n_0,r_0,m_star)
+            n_star = compute_n_star_r(r,gamma,n_0,r_0,m_star)
+            M_star = compute_M_star_r(r,gamma,n_0,r_0,m_star)
+            N_star = compute_N_star_r(r,gamma,n_0,r_0,m_star)
+            sigma_r = compute_sigma_r(r,gamma,n_0,r_0,m_star,m3,CONST_G)
+            
+            print 'n_star',n_star,'M_star',M_star,'N_star',N_star,'sigma_r',sigma_r
+        
+            LK_timescale = (P2**2/P1)*((m1+m2+m3)/m3)*pow(1.0-e2**2,3.0/2.0)
+            print 'LK_timescale/Myr',LK_timescale*1e-6
+            VRR_mass_precession_timescale = (1.0/2.0)*pow(1.0-e2**2,-1.0/2.0)*(m3/M_star)*P2
+            VRR_mass_precession_rate = 1.0/VRR_mass_precession_timescale
+            VRR_timescale = (P2/2.0)*(m3/m_star)*1.0/np.sqrt(N_star)
+                
+            print 'VRR_mass_precession_timescale/Myr',VRR_mass_precession_timescale*1e-6,'VRR_timescale/Myr',VRR_timescale*1e-6
+           
+            outer_orbit.VRR_include_mass_precession = VRR_include_mass_precession
+            outer_orbit.VRR_mass_precession_rate = VRR_mass_precession_rate
+
+            VRR_reorientation_timestep = np.sqrt(0.1)*VRR_timescale
+            print 'VRR_reorientation_timestep/Myr',VRR_reorientation_timestep*1e-6
+
+            outer_orbit.VRR_model = VRR_model
+            reorientation_function(VRR_model,VRR_timescale,VRR_reorientation_timestep,outer_orbit)
+
+            v_bin = np.sqrt(CONST_G*(m1+m2)/a1)
+            q_sigma = (m1+m2)/m_star
+            log_Lambda = np.log( 3.0*((1.0 + 1.0/q_sigma)/(1.0 + 2.0/q_sigma))*sigma_r**2/v_bin**2 )
+            evaporation_timescale = np.sqrt( (1.0+q_sigma)/(2.0*np.pi*q_sigma) )*(m1+m2)*sigma_r/(8.0*np.sqrt(np.pi)*CONST_G*a1*m_star**2*n_star*log_Lambda)
+            print 'evaporation_timescale/Myr',evaporation_timescale*1e-6
+        
+            inner_orbit.include_1PN_terms = include_inner_1PN_terms
+            outer_orbit.include_1PN_terms = include_outer_1PN_terms
+
+            tend = np.amin([tmax,evaporation_timescale])
+            Nsteps = 10000
+            data = run_simulation(tend,Nsteps,particles, \
+                VRR_reorientation_timestep,VRR_model,VRR_timescale,outer_orbit, \
+                enable_tides=False,enable_root_finding=True,enable_VRR=True)
+            found_root,t_print,rel_INCL_print,e_print,a_AU_print,rp_AU_print = data
+            
+            if found_root==True:
+                e_maxs.append(1.0)
+            else:
+                e_maxs.append(np.amax(e_print))
+                
+            print 'found_root',found_root
+            
+        from matplotlib import pyplot
+        fig=pyplot.figure(figsize=(8,8))
+        plot1=fig.add_subplot(1,1,1,yscale="linear")
+#        plot2=fig.add_subplot(2,1,2,yscale="linear")
+        colors=['k','r','g']
+        for i in range(N_orbits):
+            color=colors[i]
+            plot1.plot(a1_values,e_maxs,color='k')
+            plot1.set_xlabel("$a_1/\mathrm{AU}$",fontsize=18)
+            plot1.set_ylabel("$e_\mathrm{max}$",fontsize=18)
+#            fig.savefig("example2.pdf")
+        pyplot.show()
+
+
 def run_simulation(tend,Nsteps,particles, \
     VRR_reorientation_timestep,VRR_model,VRR_timescale,outer_orbit, \
     enable_tides=False,enable_root_finding=True,enable_VRR=True):
