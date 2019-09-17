@@ -12,7 +12,7 @@ int set_children(int index, int child1, int child2);
 int get_children(int index, int *child1, int *child2);
 
 int set_mass(int index, double mass);
-int get_mass(int index, double *mass, double *mass_dot);
+int get_mass(int index, double *mass);
 
 int set_mass_dot(int index, double mass_dot);
 int get_mass_dot(int index, double *mass_dot);

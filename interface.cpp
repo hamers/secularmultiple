@@ -104,17 +104,14 @@ int set_mass(int index, double mass)
 
     return 0;
 }
-int get_mass(int index, double *mass, double *mass_dot)
+int get_mass(int index, double *mass)
 {
     if (index > highest_particle_index)
     {
       return -1;
     }
-  
     Particle *p = particlesMap[index];
     *mass = p->mass;
-    *mass_dot = p->mass_dot;
-    
     return 0;
 }
 int set_mass_dot(int index, double mass_dot)

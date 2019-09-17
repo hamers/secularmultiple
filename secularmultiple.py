@@ -61,7 +61,6 @@ class SecularMultiple(object):
         
         self.lib = ctypes.cdll.LoadLibrary(lib_path)
         self.init_lib()
-        
         self.particles = []
 
     def init_lib(self):
@@ -189,14 +188,14 @@ class SecularMultiple(object):
         self.__particles_committed = True
         
     def evolve_model(self,end_time):
-
+        
         if end_time is None:
             raise RuntimeError('End time not specified in evolve_model!')
         if self.__particles_committed == False:
             self.commit_particles()
 
         flag = self.__update_particles_in_code()
-        
+
         ### integrate system of ODEs ###
         start_time = self.model_time
         time_step = end_time - start_time        

@@ -26,13 +26,6 @@ class test_secularmultiple():
         test reference system of Naoz et al. (2009)
         """
 
- #       primary = Particle(is_binary=False, mass=1.0)
- #       secondary = Particle(is_binary=False, mass=1.0e-3)
- #       tertiary = Particle(is_binary=False, mass=40.0e-3)
-#        inner_binary = Particle(is_binary=True, child1=primary,child2=secondary,a=6.0,e=0.001,INCL=0.0001,AP=45.0*np.pi/180.0,LAN=0.01)
-#        outer_binary = Particle(is_binary=True, child1=inner_binary,child2=tertiary,a=100.0,e=0.6,INCL=65.0*np.pi/180.0,AP=0.01,LAN=0.01)
-        
-#        particles = [primary,secondary,tertiary,inner_binary,outer_binary]
         particles = Tools.create_nested_multiple(3, [1.0,1.0e-3,40.0e-3],[6.0,100.0],[0.001,0.6],[0.0001,65.0*np.pi/180.0],[45.0*np.pi/180.0,0.01*np.pi/180.0],[0.01,0.01])
 
         code = SecularMultiple()
@@ -50,12 +43,11 @@ class test_secularmultiple():
         tend = 3.0e7
         dt = tend/float(N)
         while t<=tend:
-            print 't',t
             code.evolve_model(t)
             t+=dt
         
-            print 't',t,'e',inner_binary.e,'INCL',inner_binary.INCL,outer_binary.INCL
-            
+            print( 't',t,'e',inner_binary.e,'INCL',inner_binary.INCL,outer_binary.INCL)
+                        
             #rel_INCL_print.append(compute_mutual_inclination(inner_binary.INCL,outer_binary.INCL,inner_binary.LAN,outer_binary.LAN))
             rel_INCL_print.append(inner_binary.INCL_parent)
             e_print.append(inner_binary.e)
@@ -104,7 +96,7 @@ class test_secularmultiple():
             t+=dt
             code.evolve_model(t)
 
-            print 't/Myr',t,'omega',binaries[0].AP
+            print( 't/Myr',t,'omega',binaries[0].AP)
             t_print_array.append(t)
             a_print_array.append(binaries[0].a)
             e_print_array.append(binaries[0].e)
@@ -168,7 +160,7 @@ class test_secularmultiple():
         CONST_C = code.CONST_C
         
         rg = (m1+m2)*CONST_G/(CONST_C**2)
-        print 'rg/AU',rg
+        print( 'rg/AU',rg)
         for i in range(2):
             particles[i].radius = 100.0*rg
 
@@ -201,10 +193,10 @@ class test_secularmultiple():
             AP_print_array.append(binary.AP)
 
 
-            print 'e',binary.e,'a',binary.a
+            print( 'e',binary.e,'a',binary.a)
 
             if flag == 2:
-                print 'root found'
+                print( 'root found')
                 break
 
         if HAS_MATPLOTLIB == True:
@@ -225,7 +217,7 @@ class test_secularmultiple():
             #T = c0**4*pow(e0,48.0/19.0)/(4.0*beta)
             T_c = a0**4/(4.0*beta)
             T = (768.0/425.0)*T_c*pow(1.0-e0**2,7.0/2.0)
-            print 'T/Myr (approx)',T*1.0e-6
+            print( 'T/Myr (approx)',T*1.0e-6)
             plot2.plot(t_print_array,a_an,color='g',linestyle='dashed',linewidth=2)
 
             fontsize = 15
@@ -282,7 +274,7 @@ class test_secularmultiple():
         alpha = I/(mu*a0**2)
         T = R**3/(CONST_G*M*tau)
         t_V = 3.0*(1.0 + 1.0/k_L)*T
-        print 't_V',t_V,'M',M,'R',R
+        print( 't_V',t_V,'M',M,'R',R)
 
         particles[0].include_tidal_friction_terms = False
         
@@ -319,7 +311,7 @@ class test_secularmultiple():
         while (t<tend):
             t+=dt
             code.evolve_model(t)
-            print 'flag',code.flag,t,'a/AU',binary.a,'e',binary.e
+            print( 'flag',code.flag,t,'a/AU',binary.a,'e',binary.e)
 
 
             t_print_array.append(t)
@@ -331,10 +323,10 @@ class test_secularmultiple():
 
             bodies = particles[0:2]
             for body in bodies:
-                print 'S_x',body.spin_vec_x
-                print 'S_y',body.spin_vec_y
-                print 'S_z',body.spin_vec_z
-            print '='*50
+                print( 'S_x',body.spin_vec_x)
+                print( 'S_y',body.spin_vec_y)
+                print( 'S_z',body.spin_vec_z)
+            print( '='*50)
 
         if HAS_MATPLOTLIB == True:
             fig = pyplot.figure()
@@ -426,7 +418,7 @@ class test_secularmultiple():
         while (t<tend):
             t+=dt
             code.evolve_model(t)
-            print 'flag',code.flag,t,binary.a,binary.e
+            print( 'flag',code.flag,t,binary.a,binary.e)
 
             t_print_array.append(t*1.0e-6)
             a_print_array.append(binary.a)
@@ -524,17 +516,17 @@ class test_secularmultiple():
 
         Omega_vec = [particles[1].spin_vec_x,particles[1].spin_vec_y,particles[1].spin_vec_z]
         Omega = np.sqrt(Omega_vec[0]**2 + Omega_vec[1]**2 + Omega_vec[2]**2)
-        print 'Omega/n',Omega/n0
+        print( 'Omega/n',Omega/n0)
 
         g_dot_rot = n0*(1.0 + m_per/M)*k_AM*pow(R/a0,5.0)*(Omega/n0)**2/((1.0-e0**2)**2)
         t_rot = 2.0*np.pi/g_dot_rot
-        print 't_rot/Myr',t_rot*1.0e-6
+        print( 't_rot/Myr',t_rot*1.0e-6)
 
         N=0
         while (t<tend):
             t+=dt
             code.evolve_model(t)
-            print 'flag',code.flag,t,binary.a,binary.e
+            print( 'flag',code.flag,t,binary.a,binary.e)
 
 
             t_print_array.append(t*1.0e-6)
@@ -609,20 +601,20 @@ class test_secularmultiple():
             code.evolve_model(t)
             flag = code.flag
 
-            print 'secular_breakdown_has_occurred',binaries[0].secular_breakdown_has_occurred
-            print 'dynamical_instability_has_occurred',binaries[0].dynamical_instability_has_occurred
-            print 'physical_collision_or_orbit_crossing_has_occurred',binaries[0].physical_collision_or_orbit_crossing_has_occurred
-            print 'minimum_periapse_distance_has_occurred',binaries[0].minimum_periapse_distance_has_occurred
-            print 'RLOF_at_pericentre_has_occurred',binaries[0].RLOF_at_pericentre_has_occurred
+            print( 'secular_breakdown_has_occurred',binaries[0].secular_breakdown_has_occurred)
+            print( 'dynamical_instability_has_occurred',binaries[0].dynamical_instability_has_occurred)
+            print( 'physical_collision_or_orbit_crossing_has_occurred',binaries[0].physical_collision_or_orbit_crossing_has_occurred)
+            print( 'minimum_periapse_distance_has_occurred',binaries[0].minimum_periapse_distance_has_occurred)
+            print( 'RLOF_at_pericentre_has_occurred',binaries[0].RLOF_at_pericentre_has_occurred)
 
             t_print_array.append(t*1.0e-6)
             a_print_array.append(binaries[0].a)
             e_print_array.append(binaries[0].e)
 
             if flag == 2:
-                print 'root found'
+                print( 'root found')
                 break
-            print 't_end',code.model_time
+            print( 't_end',code.model_time)
 
 
         if HAS_MATPLOTLIB == True:
@@ -673,20 +665,20 @@ class test_secularmultiple():
             code.evolve_model(t)
             flag = code.flag
 
-            print 'secular_breakdown_has_occurred',binaries[0].secular_breakdown_has_occurred
-            print 'dynamical_instability_has_occurred',binaries[0].dynamical_instability_has_occurred
-            print 'physical_collision_or_orbit_crossing_has_occurred',binaries[0].physical_collision_or_orbit_crossing_has_occurred
-            print 'minimum_periapse_distance_has_occurred',binaries[0].minimum_periapse_distance_has_occurred
-            print 'RLOF_at_pericentre_has_occurred',binaries[0].RLOF_at_pericentre_has_occurred
+            print( 'secular_breakdown_has_occurred',binaries[0].secular_breakdown_has_occurred)
+            print( 'dynamical_instability_has_occurred',binaries[0].dynamical_instability_has_occurred)
+            print( 'physical_collision_or_orbit_crossing_has_occurred',binaries[0].physical_collision_or_orbit_crossing_has_occurred)
+            print( 'minimum_periapse_distance_has_occurred',binaries[0].minimum_periapse_distance_has_occurred)
+            print( 'RLOF_at_pericentre_has_occurred',binaries[0].RLOF_at_pericentre_has_occurred)
 
             t_print_array.append(t*1.0e-6)
             a_print_array.append(binaries[0].a)
             e_print_array.append(binaries[0].e)
 
             if flag == 2:
-                print 'root found'
+                print( 'root found')
                 break
-            print 't_end',code.model_time
+            print( 't_end',code.model_time)
 
 
         if HAS_MATPLOTLIB == True:
@@ -757,9 +749,9 @@ class test_secularmultiple():
             e_print_array.append(binaries[0].e)
 
             if flag == 2:
-                print 'root found'
+                print( 'root found')
                 break
-            print 't_end',code.model_time,bodies[0].mass,bodies[1].mass,bodies[2].mass,binaries[0].a
+            print( 't_end',code.model_time,bodies[0].mass,bodies[1].mass,bodies[2].mass,binaries[0].a)
 
 
         if HAS_MATPLOTLIB == True:
@@ -864,7 +856,7 @@ class test_secularmultiple():
 #            LAN_print_array.append(binaries[0].longitude_of_ascending_node | units.none)            
             
         Delta_e = binary.e-e
-        print 'Delta_e',Delta_e
+        print( 'Delta_e',Delta_e)
             
         if HAS_MATPLOTLIB == True:
             fig = pyplot.figure(figsize=(8,6))
@@ -937,7 +929,7 @@ class test_secularmultiple():
         code.apply_external_perturbation_assuming_integrated_orbits()
             
         Delta_e = binary.e-e
-        print 'Delta_e',Delta_e
+        print( 'Delta_e',Delta_e)
 
         exit(-1)
 
@@ -995,9 +987,9 @@ class test_secularmultiple():
         #code.parameters.include_hexadecupole_order_binary_pair_terms = True
         #code.parameters.include_dotriacontupole_order_binary_pair_terms = True
 
-        print '='*50
-        print 'pre'
-        print 'a',binary.a,'e',binary.e,'INCL',binary.INCL*180.0/np.pi,'AP',binary.AP*180.0/np.pi,'LAN',binary.LAN*180.0/np.pi,binary.mass
+        print( '='*50)
+        print( 'pre')
+        print( 'a',binary.a,'e',binary.e,'INCL',binary.INCL*180.0/np.pi,'AP',binary.AP*180.0/np.pi,'LAN',binary.LAN*180.0/np.pi,binary.mass)
 #        print 'r',particles.position_x,particles.position_y,particles.position_z
 #        print 'v',particles.velocity_x.value_in(units.km/units.s),particles.velocity_y.value_in(units.km/units.s),particles.velocity_z.value_in(units.km/units.s)
         
@@ -1013,13 +1005,13 @@ class test_secularmultiple():
         
         #channel_from_code_external.copy()
 
-        print '='*50
-        print 'post'
-        print 'a',binary.a,'e',binary.e,'INCL',binary.INCL*180.0/np.pi,'AP',binary.AP*180.0/np.pi,'LAN',binary.LAN*180.0/np.pi,binary.mass
+        print( '='*50)
+        print( 'post')
+        print( 'a',binary.a,'e',binary.e,'INCL',binary.INCL*180.0/np.pi,'AP',binary.AP*180.0/np.pi,'LAN',binary.LAN*180.0/np.pi,binary.mass)
       
         exit(-1)
-        print 'r',particles.position_x,particles.position_y,particles.position_z
-        print 'v',particles.velocity_x.value_in(units.km/units.s),particles.velocity_y.value_in(units.km/units.s),particles.velocity_z.value_in(units.km/units.s)
+        print( 'r',particles.position_x,particles.position_y,particles.position_z)
+        print( 'v',particles.velocity_x.value_in(units.km/units.s),particles.velocity_y.value_in(units.km/units.s),particles.velocity_z.value_in(units.km/units.s))
 
         #code.apply_external_perturbation_assuming_integrated_orbits()
 
@@ -1033,14 +1025,14 @@ class test_secularmultiple():
         AP_print_array.append(binaries[0].argument_of_pericenter | units.none)            
         LAN_print_array.append(binaries[0].longitude_of_ascending_node | units.none)            
 
-        print 'a_print_array',a_print_array.value_in(units.AU)
-        print 'e_print_array',e_print_array
-        print 'INCL_print_array',INCL_print_array*(180.0/numpy.pi)
-        print 'AP_print_array',AP_print_array*(180.0/numpy.pi)
-        print 'LAN_print_array',LAN_print_array*(180.0/numpy.pi)
+        print( 'a_print_array',a_print_array.value_in(units.AU))
+        print( 'e_print_array',e_print_array)
+        print( 'INCL_print_array',INCL_print_array*(180.0/numpy.pi))
+        print( 'AP_print_array',AP_print_array*(180.0/numpy.pi))
+        print( 'LAN_print_array',LAN_print_array*(180.0/numpy.pi))
         
         f1 = binaries.true_anomaly
-        print 'true_anomaly',f1
+        print( 'true_anomaly',f1)
         
         m1 = masses[0]
         m2 = masses[1]
@@ -1062,7 +1054,7 @@ class test_secularmultiple():
             + (1.0/(constants.G*(m1+m2)*a1))*( r1**2*( 2.0*v1_dot_V_k + V_k_dot_V_k) - 2.0*r1_dot_v1*r1_dot_V_k - r1_dot_V_k**2) )
         e1_p = numpy.sqrt(1.0 - j1_p)
         
-        print 'analytic results Toonen+16',a1_p.value_in(units.AU),e1_p
+        print( 'analytic results Toonen+16',a1_p.value_in(units.AU),e1_p)
         
         if HAS_MATPLOTLIB == True and 1==0:
             fig = pyplot.figure(figsize=(8,6))
@@ -1146,10 +1138,10 @@ class test_secularmultiple():
         #code.parameters.include_hexadecupole_order_binary_pair_terms = True
         #code.parameters.include_dotriacontupole_order_binary_pair_terms = True
 
-        print '='*50
-        print 'pre'
-        print 'inner','a',inner_binary.a,'e',inner_binary.e,'INCL',inner_binary.INCL*180.0/np.pi,'AP',inner_binary.AP*180.0/np.pi,'LAN',inner_binary.LAN*180.0/np.pi,'m',inner_binary.mass
-        print 'outer','a',outer_binary.a,'e',outer_binary.e,'INCL',outer_binary.INCL*180.0/np.pi,'AP',outer_binary.AP*180.0/np.pi,'LAN',outer_binary.LAN*180.0/np.pi,'m',outer_binary.mass
+        print( '='*50)
+        print( 'pre')
+        print( 'inner','a',inner_binary.a,'e',inner_binary.e,'INCL',inner_binary.INCL*180.0/np.pi,'AP',inner_binary.AP*180.0/np.pi,'LAN',inner_binary.LAN*180.0/np.pi,'m',inner_binary.mass)
+        print( 'outer','a',outer_binary.a,'e',outer_binary.e,'INCL',outer_binary.INCL*180.0/np.pi,'AP',outer_binary.AP*180.0/np.pi,'LAN',outer_binary.LAN*180.0/np.pi,'m',outer_binary.mass)
 #        print 'r',particles.position_x,particles.position_y,particles.position_z
 #        print 'v',particles.velocity_x.value_in(units.km/units.s),particles.velocity_y.value_in(units.km/units.s),particles.velocity_z.value_in(units.km/units.s)
         
@@ -1165,15 +1157,15 @@ class test_secularmultiple():
         
         #channel_from_code_external.copy()
 
-        print '='*50
-        print 'post'
-        print 'inner','a',inner_binary.a,'e',inner_binary.e,'INCL',inner_binary.INCL*180.0/np.pi,'AP',inner_binary.AP*180.0/np.pi,'LAN',inner_binary.LAN*180.0/np.pi,'m',inner_binary.mass
-        print 'outer','a',outer_binary.a,'e',outer_binary.e,'INCL',outer_binary.INCL*180.0/np.pi,'AP',outer_binary.AP*180.0/np.pi,'LAN',outer_binary.LAN*180.0/np.pi,'m',outer_binary.mass
+        print( '='*50)
+        print( 'post')
+        print( 'inner','a',inner_binary.a,'e',inner_binary.e,'INCL',inner_binary.INCL*180.0/np.pi,'AP',inner_binary.AP*180.0/np.pi,'LAN',inner_binary.LAN*180.0/np.pi,'m',inner_binary.mass)
+        print( 'outer','a',outer_binary.a,'e',outer_binary.e,'INCL',outer_binary.INCL*180.0/np.pi,'AP',outer_binary.AP*180.0/np.pi,'LAN',outer_binary.LAN*180.0/np.pi,'m',outer_binary.mass)
 
       
         exit(-1)
-        print 'r',particles.position_x,particles.position_y,particles.position_z
-        print 'v',particles.velocity_x.value_in(units.km/units.s),particles.velocity_y.value_in(units.km/units.s),particles.velocity_z.value_in(units.km/units.s)
+        print( 'r',particles.position_x,particles.position_y,particles.position_z)
+        print( 'v',particles.velocity_x.value_in(units.km/units.s),particles.velocity_y.value_in(units.km/units.s),particles.velocity_z.value_in(units.km/units.s))
 
         #code.apply_external_perturbation_assuming_integrated_orbits()
 
@@ -1187,14 +1179,14 @@ class test_secularmultiple():
         AP_print_array.append(binaries[0].argument_of_pericenter | units.none)            
         LAN_print_array.append(binaries[0].longitude_of_ascending_node | units.none)            
 
-        print 'a_print_array',a_print_array.value_in(units.AU)
-        print 'e_print_array',e_print_array
-        print 'INCL_print_array',INCL_print_array*(180.0/numpy.pi)
-        print 'AP_print_array',AP_print_array*(180.0/numpy.pi)
-        print 'LAN_print_array',LAN_print_array*(180.0/numpy.pi)
+        print( 'a_print_array',a_print_array.value_in(units.AU))
+        print( 'e_print_array',e_print_array)
+        print( 'INCL_print_array',INCL_print_array*(180.0/numpy.pi))
+        print( 'AP_print_array',AP_print_array*(180.0/numpy.pi))
+        print( 'LAN_print_array',LAN_print_array*(180.0/numpy.pi))
         
         f1 = binaries.true_anomaly
-        print 'true_anomaly',f1
+        print( 'true_anomaly',f1)
         
         m1 = masses[0]
         m2 = masses[1]
@@ -1216,7 +1208,7 @@ class test_secularmultiple():
             + (1.0/(constants.G*(m1+m2)*a1))*( r1**2*( 2.0*v1_dot_V_k + V_k_dot_V_k) - 2.0*r1_dot_v1*r1_dot_V_k - r1_dot_V_k**2) )
         e1_p = numpy.sqrt(1.0 - j1_p)
         
-        print 'analytic results Toonen+16',a1_p.value_in(units.AU),e1_p
+        print( 'analytic results Toonen+16',a1_p.value_in(units.AU),e1_p)
         
         if HAS_MATPLOTLIB == True and 1==0:
             fig = pyplot.figure(figsize=(8,6))
@@ -1327,7 +1319,7 @@ class test_secularmultiple():
         #            AP_print_array.append(binaries[0].argument_of_pericenter | units.none)            
         #            LAN_print_array.append(binaries[0].longitude_of_ascending_node | units.none)            
                 
-                print 't',t,'e',binary.e
+                print( 't',t,'e',binary.e)
                                 
 
             Delta_e_num = e_print_array[-1] - e
@@ -1339,7 +1331,7 @@ class test_secularmultiple():
         i=INCL
         Delta_e_an = (-5*np.sqrt(e**2 - e**4)*eps_SA*(-3*E*np.arccos(-1.0/E)*np.cos(AP)*np.sin(i)**2*np.sin(AP) + np.sqrt(1 - E**(-2))*(-((-1 + E**2)*np.cos(i)**2*np.cos(2*LAN)*np.sin(2*AP)) - ((3*E**2 + (-1 + E**2)*np.cos(2*LAN))*np.sin(i)**2*np.sin(2*AP))/2. + ((-1 + E**2)*np.cos(i)*(-2 - 2*np.cos(2*i) + np.cos(2*(i - AP)) - 6*np.cos(2*AP) + np.cos(2*(i + AP)))*np.sin(2*LAN))/8. + (-1 + E**2)*np.cos(i)**3*np.sin(AP)**2*np.sin(2*LAN))))/(2.*E)
         
-        print 'Delta e num',Delta_e_num,'Delta_e_an',Delta_e_an
+        print( 'Delta e num',Delta_e_num,'Delta_e_an',Delta_e_an)
         
         exit(0)
 
@@ -1370,18 +1362,18 @@ class test_secularmultiple():
         import time
         start = time.time()
         while t<=tend:
-            print 't',t
+            print( 't',t)
             SM.evolve_model(t)
             t+=dt
         
-            print 't',t,'e',inner_binary.e,'INCL',inner_binary.INCL,outer_binary.INCL,primary.spin_vec_x
+            print( 't',t,'e',inner_binary.e,'INCL',inner_binary.INCL,outer_binary.INCL,primary.spin_vec_x)
             
             #rel_INCL_print.append(compute_mutual_inclination(inner_binary.INCL,outer_binary.INCL,inner_binary.LAN,outer_binary.LAN))
             rel_INCL_print.append(inner_binary.INCL_parent)
             e_print.append(inner_binary.e)
             INCL_print.append(inner_binary.INCL)
             t_print.append(t)
-        print 'wall time',time.time()-start
+        print( 'wall time',time.time()-start)
         t_print = np.array(t_print)
         rel_INCL_print = np.array(rel_INCL_print)
         e_print = np.array(e_print)
@@ -1417,6 +1409,6 @@ if __name__ == '__main__':
         if i<0:
             t.development_test()
         else:
-            print 'Running test',i
+            print( 'Running test',i)
             function = getattr(t, 'test%s'%i)
             function()
