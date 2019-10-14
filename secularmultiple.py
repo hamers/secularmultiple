@@ -295,7 +295,7 @@ class SecularMultiple(object):
             particle.physical_collision_or_orbit_crossing_has_occurred = physical_collision_or_orbit_crossing_has_occurred.value
             particle.minimum_periapse_distance_has_occurred = minimum_periapse_distance_has_occurred.value
             particle.RLOF_at_pericentre_has_occurred = RLOF_at_pericentre_has_occurred.value
-            particle.GW_condition_has_occurred = GW_condition_has_occurred
+            particle.GW_condition_has_occurred = GW_condition_has_occurred.value
             
         if particle.is_binary==True:
             a,e,INCL,AP,LAN = ctypes.c_double(0.0),ctypes.c_double(0.0),ctypes.c_double(0.0),ctypes.c_double(0.0),ctypes.c_double(0.0)
