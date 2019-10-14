@@ -218,6 +218,47 @@ int root_finding_functions(realtype time, N_Vector y, realtype *root_functions, 
 
                 i_root++;
             }
+            if (P_p->check_for_GW_condition == 1)
+            {
+                if (P_p->parent != -1)
+                {
+                    Particle *P_parent = (*particlesMap)[P_p->parent];
+                    Particle *P_child1 = (*particlesMap)[P_p->child1];
+                    Particle *P_child2 = (*particlesMap)[P_p->child2];
+                    Particle *P_sibling = (*particlesMap)[P_p->sibling];
+                
+                    double m_1 = P_child1->mass;
+                    double m_2 = P_child2->mass;
+                    double m_3 = P_sibling->mass;
+                    double M_p = P_p->mass;
+                    double a_out = P_parent->a;
+                    double a_out_p2 = a_out*a_out;
+                    double a_out_p3 = a_out*a_out_p2;
+                    double e_out = P_parent->e;
+                    double e_out_p2 = e_out*e_out;
+                    double a_in = P_p->a;
+                    double a_in_p2 = a_in*a_in;
+                    double a_in_p3 = a_in*a_in_p2;
+                    double a_in_p4 = a_in_p2*a_in_p2;
+                    double e_in = P_p->e;
+                    double e_in_p2 = e_in*e_in;
+                    double e_in_p4 = e_in_p2*e_in_p2;
+                    double j_in = sqrt(1.0-e_in_p2);
+                    double j_in_p2 = j_in*j_in;
+                    double j_in_p4 = j_in_p2*j_in_p2;
+                    double j_in_p5 = j_in*j_in_p4;
+                    double j_in_p6 = j_in_p2*j_in_p4;
+                    double j_in_p7 = j_in*j_in_p6;
+
+                    double t_GW_a = 1.0/( c_64div5*m_1*m_2*M_p*CONST_G_P3*(1.0 + c_73div24*e_in_p2 + c_37div96*e_in_p4)/(CONST_C_LIGHT_P5*a_in_p4*j_in_p7) );
+                    double t_LK_rp = 1.0 / ( (75.0/64.0)*sqrt(5.0/3.0)*(e_in/j_in)*sqrt(CONST_G*M_p/a_in_p3)*(m_3/M_p)*(a_in_p3/a_out_p3)*pow(1.0-e_out_p2,-3.0/2.0) );
+                    
+                    root_functions[i_root] = 1.0 - t_LK_rp/(10.0*t_GW_a);
+
+                }
+
+                i_root++;
+            }
         }
         else /* P_p not a binary */
         {
@@ -434,6 +475,14 @@ int read_root_finding_data(ParticlesMap *particlesMap, int *roots_found)
                 }
                 i_root++;                
             }
+            if (P_p->check_for_GW_condition == 1)
+            {
+                if FOUND_ROOT
+                {
+                    P_p->GW_condition_has_occurred = 1;
+                }
+                i_root++;                
+            }
         }
         else /* P_p not a binary */
         {
@@ -490,6 +539,13 @@ int check_for_initial_roots(ParticlesMap *particlesMap)
                     N_root_found++;
                 }
             }            
+            if (P_p->check_for_GW_condition == 1)
+            {
+                if (P_p->GW_condition_has_occurred == 1)
+                {
+                    N_root_found++;
+                }
+            }   
         }
         else /* P_p not a binary */
         {

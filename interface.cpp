@@ -543,7 +543,6 @@ int set_PN_terms(int index, int include_pairwise_1PN_terms, int include_pairwise
     }
 
     Particle * p = particlesMap[index];
-    
     p->include_pairwise_1PN_terms = include_pairwise_1PN_terms;
     p->include_pairwise_25PN_terms = include_pairwise_25PN_terms;
         
@@ -663,7 +662,7 @@ int set_VRR_properties(int index, int VRR_model, int VRR_include_mass_precession
 /* root finding *
  ****************/
 int set_root_finding_terms(int index, int check_for_secular_breakdown, int check_for_dynamical_instability, int dynamical_instability_criterion, int dynamical_instability_central_particle, int dynamical_instability_K_parameter,
-    int check_for_physical_collision_or_orbit_crossing, int check_for_minimum_periapse_distance, double check_for_minimum_periapse_distance_value, int check_for_RLOF_at_pericentre, int check_for_RLOF_at_pericentre_use_sepinsky_fit)
+    int check_for_physical_collision_or_orbit_crossing, int check_for_minimum_periapse_distance, double check_for_minimum_periapse_distance_value, int check_for_RLOF_at_pericentre, int check_for_RLOF_at_pericentre_use_sepinsky_fit, int check_for_GW_condition)
 {
     if (index > highest_particle_index)
     {
@@ -681,10 +680,11 @@ int set_root_finding_terms(int index, int check_for_secular_breakdown, int check
     p->check_for_minimum_periapse_distance_value = check_for_minimum_periapse_distance_value;
     p->check_for_RLOF_at_pericentre = check_for_RLOF_at_pericentre;
     p->check_for_RLOF_at_pericentre_use_sepinsky_fit = check_for_RLOF_at_pericentre_use_sepinsky_fit;
+    p->check_for_GW_condition = check_for_GW_condition;
     return 0;
 }
 int get_root_finding_terms(int index, int *check_for_secular_breakdown, int *check_for_dynamical_instability, int *dynamical_instability_criterion, int *dynamical_instability_central_particle, int *dynamical_instability_K_parameter,
-    int *check_for_physical_collision_or_orbit_crossing, int *check_for_minimum_periapse_distance, double *check_for_minimum_periapse_distance_value, int *check_for_RLOF_at_pericentre, int *check_for_RLOF_at_pericentre_use_sepinsky_fit)
+    int *check_for_physical_collision_or_orbit_crossing, int *check_for_minimum_periapse_distance, double *check_for_minimum_periapse_distance_value, int *check_for_RLOF_at_pericentre, int *check_for_RLOF_at_pericentre_use_sepinsky_fit, int *check_for_GW_condition)
 {
     if (index > highest_particle_index)
     {
@@ -702,11 +702,12 @@ int get_root_finding_terms(int index, int *check_for_secular_breakdown, int *che
     *check_for_minimum_periapse_distance_value = p->check_for_minimum_periapse_distance_value;
     *check_for_RLOF_at_pericentre = p->check_for_RLOF_at_pericentre;
     *check_for_RLOF_at_pericentre_use_sepinsky_fit = p->check_for_RLOF_at_pericentre_use_sepinsky_fit;
+    *check_for_GW_condition = p->check_for_GW_condition;
     return 0;
 }
 
 /* retrieve root finding state */
-int set_root_finding_state(int index, int secular_breakdown_has_occurred, int dynamical_instability_has_occurred, int physical_collision_or_orbit_crossing_has_occurred, int minimum_periapse_distance_has_occurred, int RLOF_at_pericentre_has_occurred)
+int set_root_finding_state(int index, int secular_breakdown_has_occurred, int dynamical_instability_has_occurred, int physical_collision_or_orbit_crossing_has_occurred, int minimum_periapse_distance_has_occurred, int RLOF_at_pericentre_has_occurred, int GW_condition_has_occurred)
 {
     if (index > highest_particle_index)
     {
@@ -720,10 +721,11 @@ int set_root_finding_state(int index, int secular_breakdown_has_occurred, int dy
     p->physical_collision_or_orbit_crossing_has_occurred = physical_collision_or_orbit_crossing_has_occurred;
     p->minimum_periapse_distance_has_occurred = minimum_periapse_distance_has_occurred;
     p->RLOF_at_pericentre_has_occurred = RLOF_at_pericentre_has_occurred;
+    p->GW_condition_has_occurred = GW_condition_has_occurred;
     
     return 0;
 }
-int get_root_finding_state(int index, int *secular_breakdown_has_occurred, int *dynamical_instability_has_occurred, int *physical_collision_or_orbit_crossing_has_occurred, int* minimum_periapse_distance_has_occurred, int *RLOF_at_pericentre_has_occurred)
+int get_root_finding_state(int index, int *secular_breakdown_has_occurred, int *dynamical_instability_has_occurred, int *physical_collision_or_orbit_crossing_has_occurred, int* minimum_periapse_distance_has_occurred, int *RLOF_at_pericentre_has_occurred, int *GW_condition_has_occurred)
 {
     if (index > highest_particle_index)
     {
@@ -737,6 +739,7 @@ int get_root_finding_state(int index, int *secular_breakdown_has_occurred, int *
     *physical_collision_or_orbit_crossing_has_occurred = p->physical_collision_or_orbit_crossing_has_occurred;
     *minimum_periapse_distance_has_occurred = p->minimum_periapse_distance_has_occurred;
     *RLOF_at_pericentre_has_occurred = p->RLOF_at_pericentre_has_occurred;
+    *GW_condition_has_occurred = p->GW_condition_has_occurred;
     
     return 0;
 }

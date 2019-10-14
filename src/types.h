@@ -457,6 +457,7 @@ class Particle
     int check_for_minimum_periapse_distance,minimum_periapse_distance_has_occurred;
     double check_for_minimum_periapse_distance_value;
     int check_for_RLOF_at_pericentre,check_for_RLOF_at_pericentre_use_sepinsky_fit,RLOF_at_pericentre_has_occurred;
+    int check_for_GW_condition,GW_condition_has_occurred;    
 
     /* used in ODE solver only */
     double e_vec[3],h_vec[3];

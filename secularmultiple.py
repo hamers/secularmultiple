@@ -119,13 +119,13 @@ class SecularMultiple(object):
         self.lib.set_tides_terms.argtypes = (ctypes.c_int,ctypes.c_int,ctypes.c_int,ctypes.c_int,ctypes.c_int,ctypes.c_double,ctypes.c_double,ctypes.c_double,ctypes.c_double,ctypes.c_int,ctypes.c_double,ctypes.c_double,ctypes.c_double)
         self.lib.set_tides_terms.restype = ctypes.c_int
 
-        self.lib.set_root_finding_terms.argtypes = (ctypes.c_int,ctypes.c_int,ctypes.c_int,ctypes.c_int,ctypes.c_int,ctypes.c_int,ctypes.c_int,ctypes.c_int,ctypes.c_double,ctypes.c_int,ctypes.c_int)
+        self.lib.set_root_finding_terms.argtypes = (ctypes.c_int,ctypes.c_int,ctypes.c_int,ctypes.c_int,ctypes.c_int,ctypes.c_int,ctypes.c_int,ctypes.c_int,ctypes.c_double,ctypes.c_int,ctypes.c_int,ctypes.c_int)
         self.lib.set_root_finding_terms.restype = ctypes.c_int
 
-        self.lib.set_root_finding_state.argtypes = (ctypes.c_int,ctypes.c_int,ctypes.c_int,ctypes.c_int,ctypes.c_int,ctypes.c_int)
+        self.lib.set_root_finding_state.argtypes = (ctypes.c_int,ctypes.c_int,ctypes.c_int,ctypes.c_int,ctypes.c_int,ctypes.c_int,ctypes.c_int)
         self.lib.set_root_finding_state.restype = ctypes.c_int
 
-        self.lib.get_root_finding_state.argtypes = (ctypes.c_int,ctypes.POINTER(ctypes.c_int),ctypes.POINTER(ctypes.c_int),ctypes.POINTER(ctypes.c_int),ctypes.POINTER(ctypes.c_int),ctypes.POINTER(ctypes.c_int))
+        self.lib.get_root_finding_state.argtypes = (ctypes.c_int,ctypes.POINTER(ctypes.c_int),ctypes.POINTER(ctypes.c_int),ctypes.POINTER(ctypes.c_int),ctypes.POINTER(ctypes.c_int),ctypes.POINTER(ctypes.c_int),ctypes.POINTER(ctypes.c_int))
         self.lib.get_root_finding_state.restype = ctypes.c_int
 
         self.lib.set_constants.argtypes = (ctypes.c_double,ctypes.c_double,ctypes.c_double,ctypes.c_double,ctypes.c_double)
@@ -244,9 +244,9 @@ class SecularMultiple(object):
         
         if self.enable_root_finding == True:
             flag += self.lib.set_root_finding_terms(particle.index,particle.check_for_secular_breakdown,particle.check_for_dynamical_instability,particle.dynamical_instability_criterion,particle.dynamical_instability_central_particle,particle.dynamical_instability_K_parameter, \
-                particle.check_for_physical_collision_or_orbit_crossing,particle.check_for_minimum_periapse_distance,particle.check_for_minimum_periapse_distance_value,particle.check_for_RLOF_at_pericentre,particle.check_for_RLOF_at_pericentre_use_sepinsky_fit)
+                particle.check_for_physical_collision_or_orbit_crossing,particle.check_for_minimum_periapse_distance,particle.check_for_minimum_periapse_distance_value,particle.check_for_RLOF_at_pericentre,particle.check_for_RLOF_at_pericentre_use_sepinsky_fit,particle.check_for_GW_condition)
             flag += self.lib.set_root_finding_state(particle.index,particle.secular_breakdown_has_occurred,particle.dynamical_instability_has_occurred, \
-                particle.physical_collision_or_orbit_crossing_has_occurred,particle.minimum_periapse_distance_has_occurred,particle.RLOF_at_pericentre_has_occurred)
+                particle.physical_collision_or_orbit_crossing_has_occurred,particle.minimum_periapse_distance_has_occurred,particle.RLOF_at_pericentre_has_occurred,particle.GW_condition_has_occurred)
 
         if self.enable_VRR == True:
             flag += self.lib.set_VRR_properties(particle.index,particle.VRR_model,particle.VRR_include_mass_precession,particle.VRR_mass_precession_rate, \
@@ -287,14 +287,15 @@ class SecularMultiple(object):
         particle.mass = mass.value
 
         if self.enable_root_finding == True:
-            secular_breakdown_has_occurred,dynamical_instability_has_occurred,physical_collision_or_orbit_crossing_has_occurred,minimum_periapse_distance_has_occurred,RLOF_at_pericentre_has_occurred = ctypes.c_int(0),ctypes.c_int(0),ctypes.c_int(0),ctypes.c_int(0),ctypes.c_int(0)
+            secular_breakdown_has_occurred,dynamical_instability_has_occurred,physical_collision_or_orbit_crossing_has_occurred,minimum_periapse_distance_has_occurred,RLOF_at_pericentre_has_occurred,GW_condition_has_occurred = ctypes.c_int(0),ctypes.c_int(0),ctypes.c_int(0),ctypes.c_int(0),ctypes.c_int(0),ctypes.c_int(0)
             flag += self.lib.get_root_finding_state(particle.index,ctypes.byref(secular_breakdown_has_occurred),ctypes.byref(dynamical_instability_has_occurred), \
-                ctypes.byref(physical_collision_or_orbit_crossing_has_occurred),ctypes.byref(minimum_periapse_distance_has_occurred),ctypes.byref(RLOF_at_pericentre_has_occurred))
+                ctypes.byref(physical_collision_or_orbit_crossing_has_occurred),ctypes.byref(minimum_periapse_distance_has_occurred),ctypes.byref(RLOF_at_pericentre_has_occurred),ctypes.byref(GW_condition_has_occurred))
             particle.secular_breakdown_has_occurred = secular_breakdown_has_occurred.value
             particle.dynamical_instability_has_occurred = dynamical_instability_has_occurred.value
             particle.physical_collision_or_orbit_crossing_has_occurred = physical_collision_or_orbit_crossing_has_occurred.value
             particle.minimum_periapse_distance_has_occurred = minimum_periapse_distance_has_occurred.value
             particle.RLOF_at_pericentre_has_occurred = RLOF_at_pericentre_has_occurred.value
+            particle.GW_condition_has_occurred = GW_condition_has_occurred
             
         if particle.is_binary==True:
             a,e,INCL,AP,LAN = ctypes.c_double(0.0),ctypes.c_double(0.0),ctypes.c_double(0.0),ctypes.c_double(0.0),ctypes.c_double(0.0)
@@ -394,8 +395,8 @@ class Particle(object):
             minimum_eccentricity_for_tidal_precession = 1.0e-5, tides_apsidal_motion_constant=0.19, tides_gyration_radius=0.08, tides_viscous_time_scale=1.0, tides_viscous_time_scale_prescription=0, \
             convective_envelope_mass=1.0, convective_envelope_radius=1.0, luminosity=1.0, \
             check_for_secular_breakdown=False,check_for_dynamical_instability=False,dynamical_instability_criterion=0,dynamical_instability_central_particle=0,dynamical_instability_K_parameter=0, \
-            check_for_physical_collision_or_orbit_crossing=False,check_for_minimum_periapse_distance=False,check_for_minimum_periapse_distance_value=0.0,check_for_RLOF_at_pericentre=False,check_for_RLOF_at_pericentre_use_sepinsky_fit=False, \
-            secular_breakdown_has_occurred=False, dynamical_instability_has_occurred=False, physical_collision_or_orbit_crossing_has_occurred=False, minimum_periapse_distance_has_occurred=False, RLOF_at_pericentre_has_occurred = False, \
+            check_for_physical_collision_or_orbit_crossing=False,check_for_minimum_periapse_distance=False,check_for_minimum_periapse_distance_value=0.0,check_for_RLOF_at_pericentre=False,check_for_RLOF_at_pericentre_use_sepinsky_fit=False, check_for_GW_condition=False, \
+            secular_breakdown_has_occurred=False, dynamical_instability_has_occurred=False, physical_collision_or_orbit_crossing_has_occurred=False, minimum_periapse_distance_has_occurred=False, RLOF_at_pericentre_has_occurred = False, GW_condition_has_occurred = False, \
             is_external=False, external_t_ref=0.0, external_r_p=0.0, \
             sample_orbital_phase_randomly=True, instantaneous_perturbation_delta_mass=0.0, instantaneous_perturbation_delta_x=0.0, instantaneous_perturbation_delta_y=0.0, instantaneous_perturbation_delta_z=0.0, \
             instantaneous_perturbation_delta_vx=0.0, instantaneous_perturbation_delta_vy=0.0, instantaneous_perturbation_delta_vz=0.0, \
@@ -446,12 +447,14 @@ class Particle(object):
         self.check_for_minimum_periapse_distance_value=check_for_minimum_periapse_distance_value
         self.check_for_RLOF_at_pericentre=check_for_RLOF_at_pericentre
         self.check_for_RLOF_at_pericentre_use_sepinsky_fit=check_for_RLOF_at_pericentre_use_sepinsky_fit
+        self.check_for_GW_condition=check_for_GW_condition
 
         self.secular_breakdown_has_occurred=secular_breakdown_has_occurred
         self.dynamical_instability_has_occurred=dynamical_instability_has_occurred
         self.physical_collision_or_orbit_crossing_has_occurred=physical_collision_or_orbit_crossing_has_occurred
         self.minimum_periapse_distance_has_occurred=minimum_periapse_distance_has_occurred
         self.RLOF_at_pericentre_has_occurred=RLOF_at_pericentre_has_occurred
+        self.GW_condition_has_occurred=GW_condition_has_occurred
 
         self.sample_orbital_phase_randomly=sample_orbital_phase_randomly
         self.instantaneous_perturbation_delta_mass=instantaneous_perturbation_delta_mass
