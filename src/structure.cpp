@@ -134,7 +134,7 @@ int determine_binary_parents_and_levels(ParticlesMap *particlesMap, int *N_bodie
         P_p->highest_level = highest_level;
     }
 
-    
+    return 0;
 //    for (it_p = particlesMap->begin(); it_p != particlesMap->end(); it_p++)
 //    {
 //        Particle *P_p = (*it_p).second;

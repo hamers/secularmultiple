@@ -820,6 +820,7 @@ int compute_h_tot_vector(ParticlesMap* particlesMap, double h_tot_vec[3])
             h_tot_vec[2] += p->h_vec_z;
         }
     }
+    return 0;
 //    printf("compute_h_tot_vector %g %g %g\n",h_tot_vec[0],h_tot_vec[1],h_tot_vec[2]);
 }
     
