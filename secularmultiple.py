@@ -159,8 +159,10 @@ class SecularMultiple(object):
     
     def add_particle(self,particle):
         index = ctypes.c_int(0)
+        #print 'ap1'
         self.lib.add_particle(ctypes.byref(index), particle.is_binary, particle.is_external)
         particle.index = index.value
+        #print 'ap2'
 
         flag = self.__update_particle_in_code(particle)
 

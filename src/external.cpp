@@ -546,7 +546,8 @@ double compute_EOM_binary_pairs_external_perturbation(ParticlesMap *particlesMap
             + e_vec_cross_grad_e_vec_H[i] );
     }
     //printf("test dedt  %g\n",dot3(binary->e_vec_unit,binary->de_vec_dt));
-
+    return 0.0;
+    
 }
 
 void compute_true_anomaly_from_mean_anomaly_hyperbolic_orbit(double mean_anomaly, double eccentricity,double *cos_true_anomaly,double *sin_true_anomaly)

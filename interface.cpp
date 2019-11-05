@@ -797,6 +797,7 @@ int clear_internal_particles()
 int set_positions_and_velocities_interface()
 {
     set_positions_and_velocities(&particlesMap);
+    return 0;
 }
 
 /**********************************************
