@@ -13,13 +13,13 @@ extern "C"
 int highest_particle_index = 0;
 ParticlesMap particlesMap;
 
-double relative_tolerance = 1.0e-16;
+double relative_tolerance = 1.0e-14;
 double absolute_tolerance_eccentricity_vectors = 1.0e-14;
 bool include_quadrupole_order_terms = true;
 bool include_octupole_order_binary_pair_terms = true;
-bool include_octupole_order_binary_triplet_terms = false;
-bool include_hexadecupole_order_binary_pair_terms = false;
-bool include_dotriacontupole_order_binary_pair_terms = false;
+bool include_octupole_order_binary_triplet_terms = true;
+bool include_hexadecupole_order_binary_pair_terms = true;
+bool include_dotriacontupole_order_binary_pair_terms = true;
 int orbital_phases_random_seed = 0;
 
 
@@ -1155,6 +1155,21 @@ int set_constants(double CONST_G_, double CONST_C_, double CONST_MSUN_, double C
     return 0;
 }
 
+int set_parameters(double relative_tolerance_, double absolute_tolerance_eccentricity_vectors_, 
+    bool include_quadrupole_order_terms_, bool include_octupole_order_binary_pair_terms_, bool include_octupole_order_binary_triplet_terms_,
+    bool include_hexadecupole_order_binary_pair_terms_, bool include_dotriacontupole_order_binary_pair_terms_)
+{
+    relative_tolerance = relative_tolerance_;
+    absolute_tolerance_eccentricity_vectors = absolute_tolerance_eccentricity_vectors_;
+    include_quadrupole_order_terms = include_quadrupole_order_terms_;
+    include_octupole_order_binary_pair_terms = include_octupole_order_binary_pair_terms_;
+    include_octupole_order_binary_triplet_terms = include_octupole_order_binary_triplet_terms_;
+    include_hexadecupole_order_binary_pair_terms = include_hexadecupole_order_binary_pair_terms_;
+    include_dotriacontupole_order_binary_pair_terms = include_dotriacontupole_order_binary_pair_terms_;
+    //printf("PARAMS %g %g %d %d %d %d %d\n",relative_tolerance,absolute_tolerance_eccentricity_vectors,include_quadrupole_order_terms,include_octupole_order_binary_pair_terms,include_octupole_order_binary_triplet_terms,include_hexadecupole_order_binary_pair_terms,include_dotriacontupole_order_binary_pair_terms);
+    
+    return 0;
+}
 int get_relative_tolerance(double *value)
 {
     *value = relative_tolerance;

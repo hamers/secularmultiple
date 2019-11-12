@@ -518,6 +518,7 @@ class Particle
         minimum_periapse_distance_has_occurred = 0;
         RLOF_at_pericentre_has_occurred = 0;
         
+        stellar_type = 0;
         
         include_pairwise_1PN_terms = 0;
         include_pairwise_25PN_terms = 0;

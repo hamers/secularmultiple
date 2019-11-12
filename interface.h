@@ -166,6 +166,10 @@ extern bool include_dotriacontupole_order_binary_pair_terms;
 extern int orbital_phases_random_seed;
 
 int set_constants(double CONST_G_, double CONST_C_, double CONST_MSUN_, double CONST_R_SUN_, double CONST_L_SUN_);
+int set_parameters(double relative_tolerance_, double absolute_tolerance_eccentricity_vectors_, 
+    bool include_quadrupole_order_terms_, bool include_octupole_order_binary_pair_terms_, bool include_octupole_order_binary_triplet_terms_,
+    bool include_hexadecupole_order_binary_pair_terms_, bool include_dotriacontupole_order_binary_pair_terms_);
+
 
 int get_relative_tolerance(double *value);
 int set_relative_tolerance(double value);

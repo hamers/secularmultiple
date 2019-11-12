@@ -272,6 +272,28 @@ double compute_EOM_equilibrium_tide_BO_full(ParticlesMap *particlesMap, int bina
     double rg = star->tides_gyration_radius;
 
     double t_V = compute_t_V(star,companion,a);
+
+
+    if (star->is_binary == true)
+    /* Ad hoc tides when the object is not a single body
+     * Apply tides to largest child (if either is body)
+     * If none of the children are bodies, do not apply tides (R=0) */
+    {
+        Particle *child1 = (*particlesMap)[star->child1];
+        Particle *child2 = (*particlesMap)[star->child2];
+        double R1,R2;
+        R1 = R2 = 0.0;
+        if (child1->is_binary == false)
+        {
+            R1 = child1->radius;
+        }
+        if (child2->is_binary == false)
+        {
+            R2 = child2->radius;
+        }
+        R = max(R1,R2);
+        
+    }
     star->tides_viscous_time_scale = t_V;
 
     if (t_V!=t_V)

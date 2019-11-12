@@ -35,6 +35,14 @@ class SecularMultiple(object):
         self.__CONST_R_SUN = 0.004649130343817401
         self.__CONST_L_SUN = 0.0002710404109745588
 
+        self.__relative_tolerance = 1.0e-14
+        self.__absolute_tolerance_eccentricity_vectors = 1.0e-14
+        self.__include_quadrupole_order_terms = True
+        self.__include_octupole_order_binary_pair_terms = True
+        self.__include_octupole_order_binary_triplet_terms = True
+        self.__include_hexadecupole_order_binary_pair_terms = True
+        self.__include_dotriacontupole_order_binary_pair_terms = True
+    
         self.__particles_committed = False
         self.model_time = 0.0
         self.time_step = 0.0
@@ -132,7 +140,12 @@ class SecularMultiple(object):
         self.lib.set_constants.restype = ctypes.c_int
 
         self.__set_constants_in_code()
+        
+        self.lib.set_parameters.argtypes = (ctypes.c_double,ctypes.c_double,ctypes.c_bool,ctypes.c_bool,ctypes.c_bool,ctypes.c_bool,ctypes.c_bool)
+        self.lib.set_parameters.restype = ctypes.c_int
 
+        self.__set_parameters_in_code()
+        
         self.lib.evolve_interface.argtypes = (ctypes.c_double,ctypes.c_double, \
             ctypes.POINTER(ctypes.c_double),ctypes.POINTER(ctypes.c_double),ctypes.POINTER(ctypes.c_int),ctypes.POINTER(ctypes.c_int))
         self.lib.evolve_interface.restype = ctypes.c_int
@@ -336,10 +349,16 @@ class SecularMultiple(object):
     def __set_constants_in_code(self):
         self.lib.set_constants(self.__CONST_G,self.__CONST_C,self.__CONST_M_SUN,self.__CONST_R_SUN,self.__CONST_L_SUN)
 
+    def __set_parameters_in_code(self):
+        self.lib.set_parameters(self.__relative_tolerance,self.__absolute_tolerance_eccentricity_vectors,self.__include_quadrupole_order_terms, \
+            self.__include_octupole_order_binary_pair_terms,self.__include_octupole_order_binary_triplet_terms, \
+            self.__include_hexadecupole_order_binary_pair_terms,self.__include_dotriacontupole_order_binary_pair_terms)
+
     def reset(self):
         self.__init__()
         self.lib.clear_internal_particles()
 
+    ### Constants ###
     @property
     def CONST_G(self):
         return self.__CONST_G
@@ -384,6 +403,70 @@ class SecularMultiple(object):
     def CONST_R_SUN(self, value):
         self.__CONST_R_SUN = value
         self.__set_constants_in_code()
+
+    ### Parameters ###
+    @property
+    def relative_tolerance(self):
+        return self.__relative_tolerance
+
+    @relative_tolerance.setter
+    def relative_tolerance(self, value):
+        self.__relative_tolerance = value
+        self.__set_parameters_in_code()
+
+    @property
+    def absolute_tolerance_eccentricity_vectors(self):
+        return self.__absolute_tolerance_eccentricity_vectors
+
+    @absolute_tolerance_eccentricity_vectors.setter
+    def absolute_tolerance_eccentricity_vectors(self, value):
+        self.__absolute_tolerance_eccentricity_vectors = value
+        self.__set_parameters_in_code()
+        
+    @property
+    def include_quadrupole_order_terms(self):
+        return self.__include_quadrupole_order_terms
+
+    @include_quadrupole_order_terms.setter
+    def include_quadrupole_order_terms(self, value):
+        self.__include_quadrupole_order_terms = value
+        self.__set_parameters_in_code()
+
+    @property
+    def include_octupole_order_binary_pair_terms(self):
+        return self.__include_octupole_order_binary_pair_terms
+
+    @include_octupole_order_binary_pair_terms.setter
+    def include_octupole_order_binary_pair_terms(self, value):
+        self.__include_octupole_order_binary_pair_terms = value
+        self.__set_parameters_in_code()
+
+    @property
+    def include_octupole_order_binary_triplet_terms(self):
+        return self.__include_octupole_order_binary_triplet_terms
+
+    @include_octupole_order_binary_triplet_terms.setter
+    def include_octupole_order_binary_triplet_terms(self, value):
+        self.__include_octupole_order_binary_triplet_terms = value
+        self.__set_parameters_in_code()
+        
+    @property
+    def include_hexadecupole_order_binary_pair_terms(self):
+        return self.__include_hexadecupole_order_binary_pair_terms
+
+    @include_hexadecupole_order_binary_pair_terms.setter
+    def include_hexadecupole_order_binary_pair_terms(self, value):
+        self.__include_hexadecupole_order_binary_pair_terms = value
+        self.__set_parameters_in_code()
+        
+    @property
+    def include_dotriacontupole_order_binary_pair_terms(self):
+        return self.__include_dotriacontupole_order_binary_pair_terms
+
+    @include_dotriacontupole_order_binary_pair_terms.setter
+    def include_dotriacontupole_order_binary_pair_terms(self, value):
+        self.__include_dotriacontupole_order_binary_pair_terms = value
+        self.__set_parameters_in_code()
 
     
 class Particle(object):
