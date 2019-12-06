@@ -100,7 +100,7 @@ class examples():
         particles[1].tides_viscous_time_scale = t_V
         particles[1].tides_gyration_radius = rg
 
-        #binaries[0].include_1PN_terms = True
+        #binaries[0].include_pairwise_1PN_terms = True
         code.add_particles(particles)
         primary = code.particles[0]
 
@@ -225,7 +225,7 @@ class examples():
         N_orbits = len(orbits)
         
 
-        #orbits[0].include_1PN_terms = True
+        #orbits[0].include_pairwise_1PN_terms = True
         code.add_particles(particles)
         primary = code.particles[0]
 
@@ -751,7 +751,7 @@ def determine_stability_time(tend,Nsteps,N, masses,semimajor_axes,eccentricities
         o.check_for_physical_collision_or_orbit_crossing = True
     N_orbits = len(orbits)
     
-    #binaries[0].include_1PN_terms = True
+    #binaries[0].include_pairwise_1PN_terms = True
     code = SecularMultiple() ### initialize the code
 
     code.add_particles(particles)

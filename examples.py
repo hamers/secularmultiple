@@ -124,7 +124,7 @@ class examples():
             code.evolve_model(t)
             t+=dt
         
-            print 't',t,'es',[o.e for o in orbits]
+            print('t',t,'es',[o.e for o in orbits])
             for i in range(N_orbits):
                 rel_INCL_print[i].append(orbits[i].INCL_parent)
                 a_AU_print[i].append(orbits[i].a)
@@ -132,7 +132,7 @@ class examples():
                 INCL_print[i].append(orbits[i].INCL)
             t_print.append(t)
             
-        print 'wall time',time.time()-start
+        print('wall time',time.time()-start)
         
         t_print = np.array(t_print)
         for i in range(N_orbits):
@@ -232,7 +232,7 @@ class examples():
         
         sigma_h_km_s = pow(10.0,log10_sigma_h_km_s)
         sigma_h = 1.0e3*sigma_h_km_s*meter/second
-        print 'sigma_h_km_s',sigma_h_km_s,'sigma_h',sigma_h
+        print('sigma_h_km_s',sigma_h_km_s,'sigma_h',sigma_h)
 
 #       K_12 = K_12_function(gamma)
 #        K_32 = K_32_function(gamma)
@@ -250,22 +250,22 @@ class examples():
         N_star = compute_N_star_r(r,gamma,n_0,r_0,m_star)
         sigma_r = compute_sigma_r(r,gamma,n_0,r_0,m_star,m3,CONST_G)
         
-        print 'n_star',n_star,'M_star',M_star,'N_star',N_star,'sigma_r',sigma_r
+        print('n_star',n_star,'M_star',M_star,'N_star',N_star,'sigma_r',sigma_r)
         
         LK_timescale = (P2**2/P1)*((m1+m2+m3)/m3)*pow(1.0-e2**2,3.0/2.0)
-        print 'LK_timescale',LK_timescale
+        print('LK_timescale',LK_timescale)
         VRR_mass_precession_timescale = (1.0/2.0)*pow(1.0-e2**2,-1.0/2.0)*(m3/M_star)*P2
         VRR_mass_precession_rate = 1.0/VRR_mass_precession_timescale
         VRR_timescale = (P2/2.0)*(m3/m_star)*1.0/np.sqrt(N_star)
         #VRR_timescale *= 0.1
                 
-        print 'VRR_mass_precession_timescale',VRR_mass_precession_timescale,'VRR_timescale',VRR_timescale
+        print('VRR_mass_precession_timescale',VRR_mass_precession_timescale,'VRR_timescale',VRR_timescale)
        
         outer_orbit.VRR_include_mass_precession = VRR_include_mass_precession
         outer_orbit.VRR_mass_precession_rate = VRR_mass_precession_rate
 
         VRR_reorientation_timestep = np.sqrt(0.1)*VRR_timescale
-        print 'VRR_reorientation_timestep',VRR_reorientation_timestep
+        print('VRR_reorientation_timestep',VRR_reorientation_timestep)
 
         outer_orbit.VRR_model = VRR_model
         reorientation_function(VRR_model,VRR_timescale,VRR_reorientation_timestep,outer_orbit)
@@ -275,7 +275,7 @@ class examples():
         q_sigma = (m1+m2)/m_star
         log_Lambda = np.log( 3.0*((1.0 + 1.0/q_sigma)/(1.0 + 2.0/q_sigma))*sigma_r**2/v_bin**2 )
         evaporation_timescale = np.sqrt( (1.0+q_sigma)/(2.0*np.pi*q_sigma) )*(m1+m2)*sigma_r/(8.0*np.sqrt(np.pi)*CONST_G*a1*m_star**2*n_star*log_Lambda)
-        print 'evaporation_timescale',evaporation_timescale
+        print('evaporation_timescale',evaporation_timescale)
         
 
         inner_orbit.include_1PN_terms = include_inner_1PN_terms
@@ -313,7 +313,7 @@ class examples():
             t+=dt
             code.evolve_model(t)
 
-            print 't',t,'es',[o.e for o in orbits],'Omegas',[o.LAN for o in orbits]
+            print('t',t,'es',[o.e for o in orbits],'Omegas',[o.LAN for o in orbits])
             for i in range(N_orbits):
                 rel_INCL_print[i].append(orbits[i].INCL_parent)
                 a_AU_print[i].append(orbits[i].a)
@@ -321,7 +321,7 @@ class examples():
                 INCL_print[i].append(orbits[i].INCL)
             t_print.append(t)
             
-        print 'wall time',time.time()-start
+        print('wall time',time.time()-start)
         
         t_print = np.array(t_print)
         for i in range(N_orbits):
