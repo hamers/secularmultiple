@@ -21,6 +21,11 @@ int determine_binary_parents_and_levels(ParticlesMap *particlesMap, int *N_bodie
         Particle *P_p = (*it_p).second;
         
         P_p->parent = -1;
+    }
+
+    for (it_p = particlesMap->begin(); it_p != particlesMap->end(); it_p++)
+    {
+        Particle *P_p = (*it_p).second;
         
         if (P_p->is_binary == 1)
         {
@@ -52,11 +57,6 @@ int determine_binary_parents_and_levels(ParticlesMap *particlesMap, int *N_bodie
             for (it_q = particlesMap->begin(); it_q != particlesMap->end(); it_q++)
             {
                 Particle *P_q = (*it_q).second;
-                
-//                if ((P_q->index == P_p->child1) || (P_q->index == P_p->child2))
-//                {
-//                    P_q->parent = P_p->index;
-//                }
                 if (P_q->index == P_p->child1)
                 {
                     P_q->parent = P_p->index;
@@ -64,6 +64,7 @@ int determine_binary_parents_and_levels(ParticlesMap *particlesMap, int *N_bodie
                 }
                 if (P_q->index == P_p->child2)
                 {
+                    
                     P_q->parent = P_p->index;
                     P_q->sibling = P_p->child1;
                 }
@@ -124,6 +125,7 @@ int determine_binary_parents_and_levels(ParticlesMap *particlesMap, int *N_bodie
             }
         }
         highest_level = max(P_p->level,highest_level);
+        
     }
 
     /* write highest level to all particles -- needed for function set_binary_masses_from_body_masses */
@@ -147,7 +149,9 @@ void set_binary_masses_from_body_masses(ParticlesMap *particlesMap)
     /* set binary masses -- to ensure this happens correctly, do this from highest level to lowest level */
     ParticlesMapIterator it_p;
     int highest_level = (*particlesMap)[0]->highest_level;
+
     int level=highest_level;
+
     while (level > -1)
     {
         for (it_p = particlesMap->begin(); it_p != particlesMap->end(); it_p++)

@@ -4,7 +4,7 @@ CSRC = src/cvode/cvode.c src/cvode/cvode_dense.c src/cvode/cvode_direct.c src/cv
 COBJ = $(CXXSRC:.cpp=.o) $(CSRC:.c=.o)
 CXXHEADERS = $(CXXSRC:.cpp=.h)
 CHEADERS = $(CSRC:.c=.h)
-CPPFLAGS = -fPIC -shared -O1
+CPPFLAGS = -fPIC -shared -O3
 
 all: $(COBJ) libsecularmultiple.so
 

@@ -1,6 +1,6 @@
 """
 Some examples illustrating the usage of SecularMultiple
-Adrian Hamers, June 2019
+Adrian Hamers, February 2020
 """
 
 import numpy as np

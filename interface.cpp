@@ -75,7 +75,7 @@ int set_children(int index, int child1, int child2)
     Particle *p = particlesMap[index];
     p->child1 = child1;
     p->child2 = child2;
-    //printf("c1 %d c2 %d\n",child1,child2);
+
     return 0;
 }
 int get_children(int index, int *child1, int *child2)
@@ -186,7 +186,7 @@ int set_orbital_vectors(int index, double e_vec_x, double e_vec_y, double e_vec_
     p->h_vec_x = h_vec_x;
     p->h_vec_y = h_vec_y;
     p->h_vec_z = h_vec_z;
-    //printf("ok %g %g %g %g %g %g\n",e_vec_x,e_vec_y,e_vec_z,h_vec_x,h_vec_y,h_vec_z);
+    
     return 0;
 }
 int get_orbital_vectors(int index, double *e_vec_x, double *e_vec_y, double *e_vec_z, \
@@ -225,17 +225,19 @@ int set_orbital_elements(int index, double semimajor_axis, double eccentricity, 
 
     /* determine masses in all binaries */
     int N_bodies, N_binaries, N_root_finding;
+
     determine_binary_parents_and_levels(&particlesMap, &N_bodies, &N_binaries, &N_root_finding);
+
     set_binary_masses_from_body_masses(&particlesMap);
-    
+
     compute_orbital_vectors_from_orbital_elements(p->child1_mass, p->child2_mass, semimajor_axis, eccentricity, \
         inclination, argument_of_pericenter, longitude_of_ascending_node, \
         &(p->e_vec_x), &(p->e_vec_y), &(p->e_vec_z), &(p->h_vec_x), &(p->h_vec_y), &(p->h_vec_z) );
     
     p->true_anomaly = true_anomaly;
     p->sample_orbital_phase_randomly = sample_orbital_phase_randomly;
-//    printf("soe a %g e %g TA %g I %g AP %g LAN %g SOPR %d\n",semimajor_axis,eccentricity,true_anomaly,inclination,argument_of_pericenter,longitude_of_ascending_node,sample_orbital_phase_randomly);
-//    printf("set_orbital_elements %g %g %g %g %g %g\n",p->e_vec_x,p->e_vec_y,p->e_vec_z,p->h_vec_x,p->h_vec_y,p->h_vec_z);
+    //printf("soe a %g e %g TA %g I %g AP %g LAN %g SOPR %d\n",semimajor_axis,eccentricity,true_anomaly,inclination,argument_of_pericenter,longitude_of_ascending_node,sample_orbital_phase_randomly);
+    //printf("set_orbital_elements %g %g %g %g %g %g\n",p->e_vec_x,p->e_vec_y,p->e_vec_z,p->h_vec_x,p->h_vec_y,p->h_vec_z);
     
     return 0;
 }

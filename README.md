@@ -14,7 +14,9 @@ If you use this code for work in scientific publications, please cite:
 https://ui.adsabs.harvard.edu/abs/2016MNRAS.459.2827H (the original paper)
 https://ui.adsabs.harvard.edu/abs/2018MNRAS.476.4139H (updates with external perturbations)
 
-Make sure to first compile the code using `make`. The script `test_secularmultiple.py` can be used to test the
+A C++ compiler is required, as well as Python (2/3) for the Python interface. Make sure to first compile the code using `make`. It will compile using the system's default C++ compiler (if you want to change this, you could modify the Makefile). 
+
+The script `test_secularmultiple.py` can be used to test the
 installation. See `examples.py` for some examples.
 
-Adrian Hamers, June 2019
+Adrian Hamers, February 2020

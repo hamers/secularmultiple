@@ -7,7 +7,7 @@ Several routines for testing the code/installation.
 To use, run `python test_secularmultiple.py i', where i is
 the test number.
 
-Adrian Hamers, June 2019
+Adrian Hamers, February 2020
 """
 
 try:
@@ -23,11 +23,11 @@ class test_secularmultiple():
 
     def test1(self):
         """
-        test reference system of Naoz et al. (2009)
+        Test using reference system of Naoz et al. (2009)
         """
 
         particles = Tools.create_nested_multiple(3, [1.0,1.0e-3,40.0e-3],[6.0,100.0],[0.001,0.6],[0.0001,65.0*np.pi/180.0],[45.0*np.pi/180.0,0.01*np.pi/180.0],[0.01,0.01])
-
+        
         code = SecularMultiple()
         code.add_particles(particles)
         inner_binary = code.particles[3]
@@ -38,6 +38,9 @@ class test_secularmultiple():
         rel_INCL_print = []
         t_print = []
         
+        import time
+        start = time.time()
+    
         t = 0.0
         N = 1000
         tend = 3.0e7
@@ -53,6 +56,8 @@ class test_secularmultiple():
             e_print.append(inner_binary.e)
             INCL_print.append(inner_binary.INCL)
             t_print.append(t)
+        
+        print('wall time',time.time()-start)
         t_print = np.array(t_print)
         rel_INCL_print = np.array(rel_INCL_print)
         e_print = np.array(e_print)
@@ -78,6 +83,7 @@ class test_secularmultiple():
             b.include_pairwise_1PN_terms = True
 
         code = SecularMultiple()
+        
         code.add_particles(particles)
 
         binaries = [particles[2]]

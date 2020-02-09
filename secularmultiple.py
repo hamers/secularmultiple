@@ -20,9 +20,9 @@ https://ui.adsabs.harvard.edu/abs/2016MNRAS.459.2827H (the original paper)
 https://ui.adsabs.harvard.edu/abs/2018MNRAS.476.4139H (updates with external perturbations)
 
 Make sure to first compile the code using `make'. The script `test_secularmultiple.py' can be used to test the
-installation. See examples.py for some examples.
+installation. See `examples.py' for some examples (`examples_secular_chaos.py' and `examples_VRR.py contain more specific examples)
 
-Adrian Hamers, June 2019
+Adrian Hamers, February 2020
 """
 
 
@@ -57,11 +57,9 @@ class SecularMultiple(object):
         __current_dir__ = os.path.dirname(os.path.realpath(__file__))
         lib_path = os.path.join(__current_dir__, 'libsecularmultiple.so')
 
-        #print 'lib_path',lib_path
         if not os.path.isfile(lib_path):
             # try to find the library from the parent directory
             lib_path = os.path.join(os.path.abspath(os.path.join(__current_dir__, os.pardir)), 'libsecularmultiple.so')
-            #print 'not fil'
 
         if not os.path.isfile(lib_path):
             print('Library secularmultiple.so not exist -- trying to compile')
@@ -172,16 +170,20 @@ class SecularMultiple(object):
     
     def add_particle(self,particle):
         index = ctypes.c_int(0)
+
         self.lib.add_particle(ctypes.byref(index), particle.is_binary, particle.is_external)
         particle.index = index.value
-
-        flag = self.__update_particle_in_code(particle)
+        if particle.is_binary==False:
+            flag = self.lib.set_mass(particle.index,particle.mass)
 
         self.particles.append(particle)
 
     def add_particles(self,particles):
         for index,particle in enumerate(particles):
             self.add_particle(particle)
+        
+        ### All particles need to be added individually to the code first before calling __update_particles_in_code, since the latter includes reference to particles' children ###
+        flag = self.__update_particles_in_code(self.particles)
 
     def delete_particle(self,particle):
         flag = self.lib.delete_particle(particle.index)
@@ -289,6 +291,11 @@ class SecularMultiple(object):
         return flag
 
     def __update_particles_in_code(self,set_instantaneous_perturbation_properties=False):
+        flag = 0
+        for index,particle in enumerate(self.particles):
+            if particle.is_binary==True:
+                flag += self.lib.set_children(particle.index,particle.child1.index,particle.child2.index)
+        
         flag = 0
         for index,particle in enumerate(self.particles):
             flag += self.__update_particle_in_code(particle,set_instantaneous_perturbation_properties=set_instantaneous_perturbation_properties)
@@ -584,7 +591,7 @@ class Particle(object):
             if is_external==False:
                 if child1==None or child2==None:
                     raise RuntimeError('Error when adding particle: a binary should have two children!')
-                elif a==None or e==None or INCL==None or LAN==None:
+                elif a==None or e==None or INCL==None or AP == None or LAN==None:
                     raise RuntimeError('Error when adding particle: a binary should have its orbital elements specified!')
                 else:
                     self.child1 = child1
@@ -632,7 +639,7 @@ class Particle(object):
             else:
                 raise ValueError('Position vector must be len=3 vector.')
         else:
-            raise TypeError('Position vector must be a numpy vector with len=3.')
+            raise TypeError('Position vector must be a np vector with len=3.')
 
     @vel.setter
     def vel(self, vel_vec):
@@ -645,13 +652,16 @@ class Particle(object):
             else:
                 raise ValueError('Velocity vector must be len=3 vector.')
         else:
-            raise TypeError('Velocity vector must be a numpy vector with len=3.')
+            raise TypeError('Velocity vector must be a np vector with len=3.')
 
 class Tools(object):
  
     @staticmethod       
     def create_nested_multiple(N,masses,semimajor_axes,eccentricities,inclinations,arguments_of_pericentre,longitudes_of_ascending_node,radii=None):
         """
+        Create a "fully-nested" system (maximal number of levels)
+        For example, multiplanet system.
+        This function cannot make a system with multiple binaries on the same level, e.g., 2+2 quadruples
         N is number of bodies
         masses should be N-sized array
         the other arguments should be (N-1)-sized arrays
@@ -662,14 +672,14 @@ class Tools(object):
 
         particles = []
 
+        ### Add the bodies ###
         for index in range(N_bodies):
             particle = Particle(is_binary=False,mass=masses[index])
             if radii is not None:
                 particle.radius = radii[index]
             particles.append(particle)
 
-        
-        #previous_binary = particles[-1]
+        ### Add the binaries ###
         for index in range(N_binaries):
             if index==0:
                 child1 = particles[0]
@@ -677,13 +687,10 @@ class Tools(object):
             else:
                 child1 = previous_binary
                 child2 = particles[index+1]
-            #print 'c',child1,child2
             particle = Particle(is_binary=True,child1=child1,child2=child2,a=semimajor_axes[index],e=eccentricities[index],INCL=inclinations[index],AP=arguments_of_pericentre[index],LAN=longitudes_of_ascending_node[index])
 
             previous_binary = particle
             particles.append(particle)
-            
-#            print 'p',particles
         
         return particles
 

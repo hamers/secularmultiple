@@ -1,6 +1,6 @@
 """
 Some examples illustrating the usage of SecularMultiple
-Adrian Hamers, June 2019
+Adrian Hamers, February 2020
 """
 
 import numpy as np
@@ -72,6 +72,7 @@ class examples():
         LANs = [LAN1,LAN2,LAN3]
         
         particles = Tools.create_nested_multiple(N, masses,semimajor_axes,eccentricities,inclinations,APs,LANs,radii=radii) 
+        
         orbits = [x for x in particles if x.is_binary==True]
         N_orbits = len(orbits)
         
@@ -87,7 +88,7 @@ class examples():
         #alpha = I/(mu*a0**2)
         T = R1**3/(CONST_G*m1*tau)
         t_V = 3.0*(1.0 + 1.0/k_L)*T
-        #print 't_V',t_V,'M',M,'R',R
+        #print('t_V',t_V,'M',M,'R',R)
 
         particles[0].include_tidal_friction_terms = False
         particles[1].tides_method = 1
@@ -101,6 +102,7 @@ class examples():
         particles[1].tides_gyration_radius = rg
 
         #binaries[0].include_pairwise_1PN_terms = True
+        #particles=particles[::-1]
         code.add_particles(particles)
         primary = code.particles[0]
 
@@ -124,7 +126,7 @@ class examples():
             code.evolve_model(t)
             t+=dt
         
-            print 't',t,'es',[o.e for o in orbits]
+            print('t/Myr',t*1e-6,'es',[o.e for o in orbits])
             for i in range(N_orbits):
                 rel_INCL_print[i].append(orbits[i].INCL_parent)
                 a_AU_print[i].append(orbits[i].a)
@@ -132,7 +134,7 @@ class examples():
                 INCL_print[i].append(orbits[i].INCL)
             t_print.append(t)
             
-        print 'wall time',time.time()-start
+        print('wall time',time.time()-start)
         
         t_print = np.array(t_print)
         for i in range(N_orbits):
@@ -191,7 +193,7 @@ class examples():
         Delta = 10.0
 
         Delta_min = ei/X
-        print 'Delta_min',Delta_min
+        print('Delta_min',Delta_min)
         
         Nsteps = 100
         tend = 1.0e6
@@ -215,16 +217,12 @@ class examples():
             APs.append(APi)
             LANs.append(LANi)
             
-        print 'test',masses,semimajor_axes,eccentricities
-
-        
         particles = Tools.create_nested_multiple(N, masses,semimajor_axes,eccentricities,inclinations,APs,LANs,radii=radii) 
         orbits = [x for x in particles if x.is_binary==True]
         for o in orbits:
             o.check_for_physical_collision_or_orbit_crossing = True
         N_orbits = len(orbits)
         
-
         #orbits[0].include_pairwise_1PN_terms = True
         code.add_particles(particles)
         primary = code.particles[0]
@@ -246,7 +244,7 @@ class examples():
 
             code.evolve_model(t)
             
-            print 't',t,'es',[o.e for o in orbits]
+            print('t',t,'es',[o.e for o in orbits])
             for i in range(N_orbits):
                 rel_INCL_print[i].append(orbits[i].INCL_parent)
                 a_AU_print[i].append(orbits[i].a)
@@ -256,11 +254,11 @@ class examples():
 
             if code.flag == 2:
                 t = code.model_time
-                print 'root found at t=',t
+                print('root found at t=',t)
                 break
 
             t+=dt            
-        print 'wall time',time.time()-start
+        print('wall time',time.time()-start)
         
         t_print = np.array(t_print)
         for i in range(N_orbits):
@@ -320,12 +318,12 @@ class examples():
         X = (1.0/2.0)*pow(2.0*mp/3.0,1.0/3.0)
 
         Delta_crit = ei/X
-        print 'Delta_crit',Delta_crit
+        print('Delta_crit',Delta_crit)
         Delta_min = np.amax([4.0,Delta_crit]) ### minimum allowed value of Delta to avoid orbit crossing at the onset
         Delta_max = 12.0 ### maximum Delta considered
         N_Delta = 10 ### number of points in Delta
         
-        print 'Delta_min',Delta_min,'Delta_max',Delta_max
+        print('Delta_min',Delta_min,'Delta_max',Delta_max)
         
         Nsteps = 10
         tend = 1.0e7
@@ -334,7 +332,7 @@ class examples():
         plot_Deltas = []
         Deltas = np.linspace(1.1*Delta_min,Delta_max,N_Delta)
         for index_Delta,Delta in enumerate(Deltas):
-            print 'index_Delta',index_Delta,'Delta',Delta
+            print('index_Delta',index_Delta,'Delta',Delta)
             
             masses = [m0]
             radii = [R0]
@@ -360,10 +358,10 @@ class examples():
             instability_times.append(instability_time)
             plot_Deltas.append(Delta)
             
-            print 'instability_time',instability_time
+            print('instability_time',instability_time)
             
             if instability_time == tend:
-                print 'instability time reached tend'
+                print('instability time reached tend')
                 break
                 
         plot_Deltas = np.array(plot_Deltas)
@@ -414,12 +412,12 @@ class examples():
         X = (1.0/2.0)*pow(2.0*mp/3.0,1.0/3.0)
 
         Delta_crit = ei/X
-        print 'Delta_crit',Delta_crit
+        print('Delta_crit',Delta_crit)
         Delta_min = np.amax([4.0,Delta_crit]) ### minimum allowed value of Delta to avoid orbit crossing at the onset
         Delta_max = 12.0 ### maximum Delta considered
         N_Delta = 4 ### number of points in Delta
         
-        print 'Delta_min',Delta_min,'Delta_max',Delta_max
+        print('Delta_min',Delta_min,'Delta_max',Delta_max)
         
         Nsteps = 10
         tend = 1.0e7
@@ -430,13 +428,13 @@ class examples():
         plot_Deltas = []
         Deltas = np.linspace(1.1*Delta_min,Delta_max,N_Delta)
         for index_Delta,Delta in enumerate(Deltas):
-            print 'index_Delta',index_Delta,'Delta',Delta
+            print('index_Delta',index_Delta,'Delta',Delta)
             
             
             instability_times_temp = []
             for i_rand in range(N_rand):
-                print '='*50
-                print 'i_rand',i_rand
+                print('='*50)
+                print('i_rand',i_rand)
                 
                 randomf.seed(i_rand)
                 
@@ -462,21 +460,21 @@ class examples():
                     LANs.append(LANi)
 
                     ai = ai*(1.0+Delta*X)/(1.0-Delta*X)                
-                print 'masses',masses
-                print 'radii',radii
-                print 'semimajor_axes',semimajor_axes
-                print 'eccentricities',eccentricities
-                print 'inclinations',inclinations
-                print 'APs',APs
-                print 'LANs',LANs
+                print( 'masses',masses)
+                print( 'radii',radii)
+                print( 'semimajor_axes',semimajor_axes)
+                print( 'eccentricities',eccentricities)
+                print( 'inclinations',inclinations)
+                print( 'APs',APs)
+                print( 'LANs',LANs)
             
                 instability_time = determine_stability_time(tend,Nsteps,N, masses,semimajor_axes,eccentricities,inclinations,APs,LANs,radii)
                 instability_times_temp.append(instability_time)
                 
-                print 'instability_time',instability_time
+                print('instability_time',instability_time)
                 
             if instability_time == tend:
-                print 'instability time reached tend'
+                print('instability time reached tend')
                 break
                     
             instability_times_temp = np.array(instability_times_temp)
@@ -774,7 +772,7 @@ def determine_stability_time(tend,Nsteps,N, masses,semimajor_axes,eccentricities
         t+=dt            
         code.evolve_model(t)
     
-        #print 't',t,'es',[o.e for o in orbits]
+        #print('t',t,'es',[o.e for o in orbits])
         for i in range(N_orbits):
             rel_INCL_print[i].append(orbits[i].INCL_parent)
             a_AU_print[i].append(orbits[i].a)
@@ -784,11 +782,11 @@ def determine_stability_time(tend,Nsteps,N, masses,semimajor_axes,eccentricities
 
         if code.flag == 2:
             t = code.model_time
-            #print 'root found at t=',t
+            #print('root found at t=',t)
             break
 
         
-    #print 'wall time',time.time()-start
+    #print('wall time',time.time()-start)
     code.reset()
 
     return t

@@ -41,6 +41,7 @@ double compute_EOM_pairwise_1PN(ParticlesMap *particlesMap, int binary_index, bo
 
 double compute_EOM_pairwise_25PN(ParticlesMap *particlesMap, int binary_index, bool compute_hamiltonian_only)
 {
+    //printf("postnewtonian.cpp -- compute_EOM_pairwise_25PN -- binary_index %d\n",binary_index);
     Particle *binary = (*particlesMap)[binary_index];
     double e = binary->e;
     double e_p2 = e*e;
