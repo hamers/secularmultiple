@@ -23,8 +23,8 @@ libsecularmultiple.so: $(COBJ)
 	@echo ""        
 	@echo "The shared library $@ has been created successfully."
 
-clean: 
+cleanlib: 
 	$(RM) libsecularmultiple.so
-cleanall:
+clean:
 	$(RM) libsecularmultiple.so src/*.o* src/cvode/*.o*
 	
