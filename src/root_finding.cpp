@@ -18,7 +18,7 @@ int root_finding_functions(realtype time, N_Vector y, realtype *root_functions, 
     double start_time = data->start_time;
     double delta_time = time - start_time;
     
-    extract_ODE_variables(particlesMap, y, delta_time, false); // do not reset ODE quantities
+    extract_ODE_variables(particlesMap, y, delta_time);
 
     double large_quantity = 1.0e10;
     for (int i=0; i<N_root_finding; i++)
@@ -34,29 +34,41 @@ int root_finding_functions(realtype time, N_Vector y, realtype *root_functions, 
     for (it_p = particlesMap->begin(); it_p != particlesMap->end(); it_p++)
     {
         Particle *P_p = (*it_p).second;
-        if (P_p->is_binary == 1)
+        if (P_p->is_binary == true)
         {
-            if (P_p->check_for_secular_breakdown == 1)
+            if (P_p->check_for_secular_breakdown == true)
             {
+                #ifdef DEBUG
+                printf("check_for_secular_breakdown\n");
+                #endif
+                
                 double hamiltonian=0.0;
+                double KS_V=0.0;
+                compute_EOM_Newtonian_for_particle(particlesMap,P_p,&hamiltonian,&KS_V,false);
+                
+                #ifdef IGNORE
                 for (it_parent = P_p->parents.begin(); it_parent != P_p->parents.end(); it_parent++)
                 {
                     int i = std::distance(P_p->parents.begin(), it_parent);
                     Particle *P_q = (*particlesMap)[(*it_parent)];
                     int connecting_child_in_parent = P_p->connecting_child_in_parents[i];
-                    hamiltonian += compute_EOM_binary_pairs(particlesMap,P_p->index,P_q->index,connecting_child_in_parent,false);
+                    compute_EOM_binary_pairs(particlesMap,P_p->index,P_q->index,connecting_child_in_parent,&hamiltonian,&KS_V,false);
                 }
+                #endif
 
                 double AM_time_scale = compute_AM_time_scale(P_p);
                 double orbital_period = compute_orbital_period(P_p);
                 root_functions[i_root] = 1.0 - AM_time_scale/orbital_period;
-                //printf("sb %g\n",root_functions[i_root]);
 
                 i_root++;
             }
             
-            if (P_p->check_for_dynamical_instability == 1)
+            if (P_p->check_for_dynamical_instability == true)
             {
+                #ifdef DEBUG
+                printf("check_for_dynamical_instability\n");
+                #endif
+                
                 if (P_p->parent != -1)
                 {
                     Particle *P_parent = (*particlesMap)[P_p->parent];
@@ -169,7 +181,7 @@ int root_finding_functions(realtype time, N_Vector y, realtype *root_functions, 
 
                     if (root_functions[i_root] <= 0.0)
                     {
-                        P_p->dynamical_instability_has_occurred = 1;
+                        P_p->dynamical_instability_has_occurred = true;
 //                        printf("stop\n");
                     }
 
@@ -179,8 +191,12 @@ int root_finding_functions(realtype time, N_Vector y, realtype *root_functions, 
                 }
                 i_root++;                
             }
-            if (P_p->check_for_physical_collision_or_orbit_crossing == 1)
+            if (P_p->check_for_physical_collision_or_orbit_crossing == true)
             {
+                #ifdef DEBUG
+                printf("check_for_physical_collision_or_orbit_crossing\n");
+                #endif
+                
                 Particle *P_child1 = (*particlesMap)[P_p->child1];
                 Particle *P_child2 = (*particlesMap)[P_p->child2];
                 
@@ -194,14 +210,18 @@ int root_finding_functions(realtype time, N_Vector y, realtype *root_functions, 
 //                printf("root finding check_for_physical_collision_or_orbit_crossing %d %g %g %g\n",P_p->index,P_p->a,cross_section, root_functions[i_root]);
                 if (root_functions[i_root] >= 0.0)
                 {
-                    P_p->physical_collision_or_orbit_crossing_has_occurred = 1;
+                    P_p->physical_collision_or_orbit_crossing_has_occurred = true;
 //                    printf("root finding check_for_physical_collision_or_orbit_crossing %d %g %g %g\n",P_p->index,P_p->a,cross_section, root_functions[i_root]);
                 }                
                 
                 i_root++;
             }
-            if (P_p->check_for_minimum_periapse_distance == 1)
+            if (P_p->check_for_minimum_periapse_distance == true)
             {
+                #ifdef DEBUG
+                printf("check_for_minimum_periapse_distance\n");
+                #endif
+                
                 Particle *P_child1 = (*particlesMap)[P_p->child1];
                 Particle *P_child2 = (*particlesMap)[P_p->child2];
                 
@@ -212,14 +232,18 @@ int root_finding_functions(realtype time, N_Vector y, realtype *root_functions, 
 //                printf("root finding check_for_minimum_periapse_distance %d %g %g %g\n",P_p->index,P_p->a,cross_section, root_functions[i_root]);
                 if (root_functions[i_root] >= 0.0)
                 {
-                    P_p->minimum_periapse_distance_has_occurred = 1;
+                    P_p->minimum_periapse_distance_has_occurred = true;
 //                    printf("root finding check_for_minimum_periapse_distance %d %g %g %g\n",P_p->index,P_p->a,cross_section, root_functions[i_root]);
                 }                
 
                 i_root++;
             }
-            if (P_p->check_for_GW_condition == 1)
+            if (P_p->check_for_GW_condition == true)
             {
+                #ifdef DEBUG
+                printf("check_for_GW_condition\n");
+                #endif
+                
                 if (P_p->parent != -1)
                 {
                     Particle *P_parent = (*particlesMap)[P_p->parent];
@@ -263,8 +287,12 @@ int root_finding_functions(realtype time, N_Vector y, realtype *root_functions, 
         else /* P_p not a binary */
         {
 
-            if (P_p->check_for_RLOF_at_pericentre == 1)
+            if (P_p->check_for_RLOF_at_pericentre == true)
             {
+                #ifdef DEBUG
+                printf("check_for_RLOF_at_pericentre\n");
+                #endif
+                
                 if (P_p->parent != -1)
                 {
                     Particle *P_parent = (*particlesMap)[P_p->parent];
@@ -281,7 +309,7 @@ int root_finding_functions(realtype time, N_Vector y, realtype *root_functions, 
                     double f = spin_angular_frequency/orbital_angular_frequency_periapse;
             
                     double roche_radius_pericenter;
-                    if (P_p->check_for_RLOF_at_pericentre_use_sepinsky_fit == 0)
+                    if (P_p->check_for_RLOF_at_pericentre_use_sepinsky_fit == false)
                     {
                         roche_radius_pericenter = roche_radius_pericenter_eggleton(rp, subject_mass/companion_mass);
                     }
@@ -295,7 +323,7 @@ int root_finding_functions(realtype time, N_Vector y, realtype *root_functions, 
                     
                     if (root_functions[i_root] <= 0.0)
                     {
-                        P_p->RLOF_at_pericentre_has_occurred = 1;
+                        P_p->RLOF_at_pericentre_has_occurred = true;
                     }
                 }
                 
@@ -308,7 +336,7 @@ int root_finding_functions(realtype time, N_Vector y, realtype *root_functions, 
 
 void cross_section_function(Particle *p, double *cross_section)
 { 
-    if (p->is_binary==0)
+    if (p->is_binary==false)
     {
         *cross_section += p->radius;
     }
@@ -422,7 +450,7 @@ double roche_radius_pericenter_sepinsky(double rp, double q, double e, double f)
 
     if (ratio == 0.0)
     {
-        printf("unrecoverable error occurred in function roche_radius_pericenter_sepinsky in ODE_system.cpp\n");
+        printf("root_finding.cpp -- unrecoverable error occurred in function roche_radius_pericenter_sepinsky\n");
         printf("log_q %g log_A %g ratio %g\n",log_q,log_A,ratio);
         printf("rp %g q %g e %g f %g\n",rp,q,e,f);
         exit(-1);
@@ -440,57 +468,57 @@ int read_root_finding_data(ParticlesMap *particlesMap, int *roots_found)
     for (it_p = particlesMap->begin(); it_p != particlesMap->end(); it_p++)
     {
         Particle *P_p = (*it_p).second;
-        if (P_p->is_binary == 1)
+        if (P_p->is_binary == true)
         {
-            if (P_p->check_for_secular_breakdown == 1)
+            if (P_p->check_for_secular_breakdown == true)
             {
                 if FOUND_ROOT
                 {
-                    P_p->secular_breakdown_has_occurred = 1;
+                    P_p->secular_breakdown_has_occurred = true;
                 }
                 i_root++;
 
             }
-            if (P_p->check_for_dynamical_instability == 1)
+            if (P_p->check_for_dynamical_instability == true)
             {
                 if FOUND_ROOT
                 {
-                    P_p->dynamical_instability_has_occurred = 1;
+                    P_p->dynamical_instability_has_occurred = true;
                 }
                 i_root++;                
             }
-            if (P_p->check_for_physical_collision_or_orbit_crossing == 1)
+            if (P_p->check_for_physical_collision_or_orbit_crossing == true)
             {
                 if FOUND_ROOT
                 {
-                    P_p->physical_collision_or_orbit_crossing_has_occurred = 1;
+                    P_p->physical_collision_or_orbit_crossing_has_occurred = true;
                 }
                 i_root++;                
             }
-            if (P_p->check_for_minimum_periapse_distance == 1)
+            if (P_p->check_for_minimum_periapse_distance == true)
             {
                 if FOUND_ROOT
                 {
-                    P_p->minimum_periapse_distance_has_occurred = 1;
+                    P_p->minimum_periapse_distance_has_occurred = true;
                 }
                 i_root++;                
             }
-            if (P_p->check_for_GW_condition == 1)
+            if (P_p->check_for_GW_condition == true)
             {
                 if FOUND_ROOT
                 {
-                    P_p->GW_condition_has_occurred = 1;
+                    P_p->GW_condition_has_occurred = true;
                 }
                 i_root++;                
             }
         }
         else /* P_p not a binary */
         {
-            if (P_p->check_for_RLOF_at_pericentre == 1)
+            if (P_p->check_for_RLOF_at_pericentre == true)
             {
                 if FOUND_ROOT
                 {
-                    P_p->RLOF_at_pericentre_has_occurred = 1;
+                    P_p->RLOF_at_pericentre_has_occurred = true;
                 }
                 i_root++;
             }
@@ -508,40 +536,40 @@ int check_for_initial_roots(ParticlesMap *particlesMap)
     for (it_p = particlesMap->begin(); it_p != particlesMap->end(); it_p++)
     {
         Particle *P_p = (*it_p).second;
-        if (P_p->is_binary == 1)
+        if (P_p->is_binary == true)
         {
-            if (P_p->check_for_secular_breakdown == 1)
+            if (P_p->check_for_secular_breakdown == true)
             {
-                if (P_p->secular_breakdown_has_occurred == 1)
+                if (P_p->secular_breakdown_has_occurred == true)
                 {
                     N_root_found++;
                 }
 
             }
-            if (P_p->check_for_dynamical_instability == 1)
+            if (P_p->check_for_dynamical_instability == true)
             {
-                if (P_p->dynamical_instability_has_occurred == 1)
+                if (P_p->dynamical_instability_has_occurred == true)
                 {
                     N_root_found++;
                 }
             }
-            if (P_p->check_for_physical_collision_or_orbit_crossing == 1)
+            if (P_p->check_for_physical_collision_or_orbit_crossing == true)
             {
-                if (P_p->physical_collision_or_orbit_crossing_has_occurred == 1)
+                if (P_p->physical_collision_or_orbit_crossing_has_occurred == true)
                 {
                     N_root_found++;
                 }
             }
-            if (P_p->check_for_minimum_periapse_distance == 1)
+            if (P_p->check_for_minimum_periapse_distance == true)
             {
-                if (P_p->minimum_periapse_distance_has_occurred == 1)
+                if (P_p->minimum_periapse_distance_has_occurred == true)
                 {
                     N_root_found++;
                 }
             }            
-            if (P_p->check_for_GW_condition == 1)
+            if (P_p->check_for_GW_condition == true)
             {
-                if (P_p->GW_condition_has_occurred == 1)
+                if (P_p->GW_condition_has_occurred == true)
                 {
                     N_root_found++;
                 }
@@ -549,9 +577,9 @@ int check_for_initial_roots(ParticlesMap *particlesMap)
         }
         else /* P_p not a binary */
         {
-            if (P_p->check_for_RLOF_at_pericentre == 1)
+            if (P_p->check_for_RLOF_at_pericentre == true)
             {
-                if (P_p->RLOF_at_pericentre_has_occurred == 1)
+                if (P_p->RLOF_at_pericentre_has_occurred == true)
                 {
                     N_root_found++;
                 }

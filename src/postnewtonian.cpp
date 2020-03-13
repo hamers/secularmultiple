@@ -6,9 +6,8 @@
 #include <stdio.h>
 extern "C"
 {
-double compute_EOM_pairwise_1PN(ParticlesMap *particlesMap, int binary_index, bool compute_hamiltonian_only)
+void compute_EOM_pairwise_1PN(ParticlesMap *particlesMap, int binary_index, double *hamiltonian, bool compute_hamiltonian_only)
 {
-//    printf("compute_EOM_pairwise_1PN\n");
     Particle *binary = (*particlesMap)[binary_index];
     double e = binary->e;
     double a = binary->a;
@@ -21,9 +20,11 @@ double compute_EOM_pairwise_1PN(ParticlesMap *particlesMap, int binary_index, bo
     double mt = m1+m2;
 
     double hamiltonian_1PN = -3.0*CONST_G_P2*m1*m2*mt/(a*a*CONST_C_LIGHT_P2*j);
+    *hamiltonian += hamiltonian_1PN;
+        
     if (compute_hamiltonian_only == true)
     {
-        return hamiltonian_1PN;
+        return;
     }
     
     double q_vec_unit[3];
@@ -35,13 +36,14 @@ double compute_EOM_pairwise_1PN(ParticlesMap *particlesMap, int binary_index, bo
     {
         binary->de_vec_dt[i] += e*Z_1PN*q_vec_unit[i];
     }
-    
-    return hamiltonian_1PN;
+
+    #ifdef DEBUG
+    printf("postnewtonian.cpp -- compute_EOM_pairwise_1PN -- hamiltonian_1PN %g de_vec_dt += %g %g %g\n",hamiltonian_1PN,e*Z_1PN*q_vec_unit[0],e*Z_1PN*q_vec_unit[1],e*Z_1PN*q_vec_unit[2]);
+    #endif
 }
 
-double compute_EOM_pairwise_25PN(ParticlesMap *particlesMap, int binary_index, bool compute_hamiltonian_only)
+void compute_EOM_pairwise_25PN(ParticlesMap *particlesMap, int binary_index, double *hamiltonian, bool compute_hamiltonian_only)
 {
-    //printf("postnewtonian.cpp -- compute_EOM_pairwise_25PN -- binary_index %d\n",binary_index);
     Particle *binary = (*particlesMap)[binary_index];
     double e = binary->e;
     double e_p2 = e*e;
@@ -69,7 +71,10 @@ double compute_EOM_pairwise_25PN(ParticlesMap *particlesMap, int binary_index, b
         binary->de_vec_dt[i] += de_dt*e_vec_unit[i];
         binary->dh_vec_dt[i] += dh_dt*h_vec_unit[i];
     }
+
+    #ifdef DEBUG
+    printf("postnewtonian.cpp -- compute_EOM_pairwise_25PN -- de_vec_dt += %g %g %g dh_vec_dt += %g %g %g\n",de_dt*e_vec_unit[0],de_dt*e_vec_unit[1],de_dt*e_vec_unit[2],dh_dt*h_vec_unit[0],dh_dt*h_vec_unit[1],dh_dt*h_vec_unit[2]);
+    #endif
     
-    return 0.0; // N/A
 }
 }

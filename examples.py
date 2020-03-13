@@ -1,10 +1,13 @@
 """
 Some examples illustrating the usage of SecularMultiple
-Adrian Hamers, February 2020
+Adrian Hamers, March 2020
 """
 
 import numpy as np
 import numpy.random as randomf
+
+import argparse
+import time
 
 from secularmultiple import SecularMultiple,Particle,Tools
 
@@ -15,8 +18,30 @@ except ImportError:
     HAS_MATPLOTLIB = False
 
 
+def add_bool_arg(parser, name, default=False,help=None):
+    group = parser.add_mutually_exclusive_group(required=False)
+    group.add_argument('--' + name, dest=name, action='store_true',help="Enable %s"%help)
+    group.add_argument('--no-' + name, dest=name, action='store_false',help="Disable %s"%help)
+    parser.set_defaults(**{name:default})
+
+def parse_arguments():
+
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+    parser.add_argument("--e",                           type=int,     dest="example",                        default=1,              help="Example number")
+    
+    ### boolean arguments ###
+    add_bool_arg(parser, 'verbose',                         default=True,        help="Verbose terminal output")
+    add_bool_arg(parser, 'plot',                            default=True,         help="Make plots")
+    add_bool_arg(parser, 'show',                            default=True,         help="Show plots")
+    
+    args = parser.parse_args()
+
+    return args
+    
 class examples():
-    def example1(self):
+    
+    def example1(self,args):
         """
         Example of a three-planet system with tides in the innermost planet
         System parameters taken from http://adsabs.harvard.edu/abs/2011ApJ...735..109W
@@ -83,11 +108,8 @@ class examples():
         k_AM = k_L/2.0
         rg = 0.25
         tau = 0.66*second
-        #I = rg*M*R**2
-        #alpha = I/(mu*a0**2)
         T = R1**3/(CONST_G*m1*tau)
         t_V = 3.0*(1.0 + 1.0/k_L)*T
-        #print 't_V',t_V,'M',M,'R',R
 
         particles[0].include_tidal_friction_terms = False
         particles[1].tides_method = 1
@@ -100,7 +122,7 @@ class examples():
         particles[1].tides_viscous_time_scale = t_V
         particles[1].tides_gyration_radius = rg
 
-        #binaries[0].include_1PN_terms = True
+        orbits[0].include_1PN_terms = False ### do not include 1PN terms here
         code.add_particles(particles)
         primary = code.particles[0]
 
@@ -124,7 +146,8 @@ class examples():
             code.evolve_model(t)
             t+=dt
         
-            print('t',t,'es',[o.e for o in orbits])
+            if args.verbose==True:
+                print('t/Myr',t*1e-6,'es',[o.e for o in orbits])
             for i in range(N_orbits):
                 rel_INCL_print[i].append(orbits[i].INCL_parent)
                 a_AU_print[i].append(orbits[i].a)
@@ -132,7 +155,8 @@ class examples():
                 INCL_print[i].append(orbits[i].INCL)
             t_print.append(t)
             
-        print('wall time',time.time()-start)
+        if args.verbose==True:
+            print('wall time',time.time()-start)
         
         t_print = np.array(t_print)
         for i in range(N_orbits):
@@ -141,26 +165,27 @@ class examples():
             e_print[i] = np.array(e_print[i])
             a_AU_print[i] = np.array(a_AU_print[i])
         
-        from matplotlib import pyplot
-        fig=pyplot.figure(figsize=(8,8))
-        plot1=fig.add_subplot(2,1,1,yscale="log")
-        plot2=fig.add_subplot(2,1,2,yscale="linear")
-        colors=['k','r','g']
-        for i in range(N_orbits):
-            color=colors[i]
-            plot1.plot(1.0e-6*t_print,a_AU_print[i],color=color)
-            plot1.plot(1.0e-6*t_print,a_AU_print[i]*(1.0-e_print[i]),color=color)
-            plot1.plot(1.0e-6*t_print,a_AU_print[i]*(1.0+e_print[i]),color=color)
-            plot2.plot(1.0e-6*t_print,INCL_print[i]*180.0/np.pi,color=color)
-            
-            plot1.set_xlabel("$t/\mathrm{Myr}$")
-            plot2.set_xlabel("$t/\mathrm{Myr}$")
-            plot1.set_ylabel("$r_i/\mathrm{AU}$")
-            plot2.set_ylabel("$\mathrm{incl}_i/\mathrm{deg}$")
-        fig.savefig("example1.pdf")
-        pyplot.show()
+        if HAS_MATPLOTLIB==True and args.plot==True:
+            fig=pyplot.figure(figsize=(8,8))
+            plot1=fig.add_subplot(2,1,1,yscale="log")
+            plot2=fig.add_subplot(2,1,2,yscale="linear")
+            colors=['k','r','g']
+            for i in range(N_orbits):
+                color=colors[i]
+                plot1.plot(1.0e-6*t_print,a_AU_print[i],color=color)
+                plot1.plot(1.0e-6*t_print,a_AU_print[i]*(1.0-e_print[i]),color=color)
+                plot1.plot(1.0e-6*t_print,a_AU_print[i]*(1.0+e_print[i]),color=color)
+                plot2.plot(1.0e-6*t_print,INCL_print[i]*180.0/np.pi,color=color)
+                
+                plot1.set_xlabel("$t/\mathrm{Myr}$")
+                plot2.set_xlabel("$t/\mathrm{Myr}$")
+                plot1.set_ylabel("$r_i/\mathrm{AU}$")
+                plot2.set_ylabel("$\mathrm{incl}_i/\mathrm{deg}$")
+            fig.savefig("example1.pdf")
+            if args.show==True:
+                pyplot.show()
 
-    def example2(self):
+    def example2(self,args):
         """
         Lidov-Kozai problem of a planet around a star around a supermassive black hole.
         Includes perturbations from other stars in the form of vector resonant relaxation (VRR)
@@ -232,7 +257,9 @@ class examples():
         
         sigma_h_km_s = pow(10.0,log10_sigma_h_km_s)
         sigma_h = 1.0e3*sigma_h_km_s*meter/second
-        print('sigma_h_km_s',sigma_h_km_s,'sigma_h',sigma_h)
+        
+        if args.verbose==True:
+            print('sigma_h_km_s',sigma_h_km_s,'sigma_h',sigma_h)
 
 #       K_12 = K_12_function(gamma)
 #        K_32 = K_32_function(gamma)
@@ -250,22 +277,26 @@ class examples():
         N_star = compute_N_star_r(r,gamma,n_0,r_0,m_star)
         sigma_r = compute_sigma_r(r,gamma,n_0,r_0,m_star,m3,CONST_G)
         
-        print('n_star',n_star,'M_star',M_star,'N_star',N_star,'sigma_r',sigma_r)
+        if args.verbose==True:
+            print('n_star',n_star,'M_star',M_star,'N_star',N_star,'sigma_r',sigma_r)
         
         LK_timescale = (P2**2/P1)*((m1+m2+m3)/m3)*pow(1.0-e2**2,3.0/2.0)
-        print('LK_timescale',LK_timescale)
+        if args.verbose==True:
+            print('LK_timescale',LK_timescale)
         VRR_mass_precession_timescale = (1.0/2.0)*pow(1.0-e2**2,-1.0/2.0)*(m3/M_star)*P2
         VRR_mass_precession_rate = 1.0/VRR_mass_precession_timescale
         VRR_timescale = (P2/2.0)*(m3/m_star)*1.0/np.sqrt(N_star)
         #VRR_timescale *= 0.1
                 
-        print('VRR_mass_precession_timescale',VRR_mass_precession_timescale,'VRR_timescale',VRR_timescale)
+        if args.verbose==True:
+            print('VRR_mass_precession_timescale',VRR_mass_precession_timescale,'VRR_timescale',VRR_timescale)
        
         outer_orbit.VRR_include_mass_precession = VRR_include_mass_precession
         outer_orbit.VRR_mass_precession_rate = VRR_mass_precession_rate
 
         VRR_reorientation_timestep = np.sqrt(0.1)*VRR_timescale
-        print('VRR_reorientation_timestep',VRR_reorientation_timestep)
+        if args.verbose==True:
+            print('VRR_reorientation_timestep',VRR_reorientation_timestep)
 
         outer_orbit.VRR_model = VRR_model
         reorientation_function(VRR_model,VRR_timescale,VRR_reorientation_timestep,outer_orbit)
@@ -275,7 +306,8 @@ class examples():
         q_sigma = (m1+m2)/m_star
         log_Lambda = np.log( 3.0*((1.0 + 1.0/q_sigma)/(1.0 + 2.0/q_sigma))*sigma_r**2/v_bin**2 )
         evaporation_timescale = np.sqrt( (1.0+q_sigma)/(2.0*np.pi*q_sigma) )*(m1+m2)*sigma_r/(8.0*np.sqrt(np.pi)*CONST_G*a1*m_star**2*n_star*log_Lambda)
-        print('evaporation_timescale',evaporation_timescale)
+        if args.verbose==True:
+            print('evaporation_timescale',evaporation_timescale)
         
 
         inner_orbit.include_1PN_terms = include_inner_1PN_terms
@@ -313,7 +345,8 @@ class examples():
             t+=dt
             code.evolve_model(t)
 
-            print('t',t,'es',[o.e for o in orbits],'Omegas',[o.LAN for o in orbits])
+            if args.verbose==True:
+                print('t',t,'es',[o.e for o in orbits],'Omegas',[o.LAN for o in orbits])
             for i in range(N_orbits):
                 rel_INCL_print[i].append(orbits[i].INCL_parent)
                 a_AU_print[i].append(orbits[i].a)
@@ -321,7 +354,8 @@ class examples():
                 INCL_print[i].append(orbits[i].INCL)
             t_print.append(t)
             
-        print('wall time',time.time()-start)
+        if args.verbose==True:
+            print('wall time',time.time()-start)
         
         t_print = np.array(t_print)
         for i in range(N_orbits):
@@ -330,27 +364,199 @@ class examples():
             e_print[i] = np.array(e_print[i])
             a_AU_print[i] = np.array(a_AU_print[i])
         
-        from matplotlib import pyplot
-        fig=pyplot.figure(figsize=(8,8))
-        plot1=fig.add_subplot(2,1,1,yscale="log")
-        plot2=fig.add_subplot(2,1,2,yscale="linear")
-        colors=['k','r','g']
-        for i in range(N_orbits):
-            color=colors[i]
-            plot1.plot(1.0e-6*t_print,a_AU_print[i],color=color)
-            plot1.plot(1.0e-6*t_print,a_AU_print[i]*(1.0-e_print[i]),color=color)
-            plot1.plot(1.0e-6*t_print,a_AU_print[i]*(1.0+e_print[i]),color=color)
-            #plot2.plot(1.0e-6*t_print,INCL_print[i]*180.0/np.pi,color=color,linestyle='dotted')
-            plot2.plot(1.0e-6*t_print,rel_INCL_print[i]*180.0/np.pi,color=color)
+        if HAS_MATPLOTLIB==True and args.plot==True:
+            fig=pyplot.figure(figsize=(8,8))
+            plot1=fig.add_subplot(2,1,1,yscale="log")
+            plot2=fig.add_subplot(2,1,2,yscale="linear")
+            colors=['k','r','g']
+            for i in range(N_orbits):
+                color=colors[i]
+                plot1.plot(1.0e-6*t_print,a_AU_print[i],color=color)
+                plot1.plot(1.0e-6*t_print,a_AU_print[i]*(1.0-e_print[i]),color=color)
+                plot1.plot(1.0e-6*t_print,a_AU_print[i]*(1.0+e_print[i]),color=color)
+                plot2.plot(1.0e-6*t_print,rel_INCL_print[i]*180.0/np.pi,color=color)
+                
+                plot1.set_xlabel("$t/\mathrm{Myr}$")
+                plot2.set_xlabel("$t/\mathrm{Myr}$")
+                plot1.set_ylabel("$r_i/\mathrm{AU}$")
+                plot2.set_ylabel("$\mathrm{incl}_\mathrm{rel}/\mathrm{deg}$")
+            fig.savefig("example2.pdf")
+            pyplot.show()
+
+    def example3(self,args):
+        m1=1.0
+        m2=1.0e-6
+        m3=1.0
+        e1=0
+        e2=0.4
+        a1=1.0
+        a2=10.0
+
+        i1=0.2
+        i2=65.0*np.pi/180.0
+        AP1=0
+        AP2=0
+        LAN1=0
+        LAN2=0
+
+        do_nbody=True
+        particles = Tools.create_nested_multiple(3, [m1,m2,m3],[a1,a2],[e1,e2],[i1,i2],[AP1,AP2],[LAN1,LAN2])
+        bodies = [x for x in particles if x.is_binary==False]
+        binaries = [x for x in particles if x.is_binary==True]
+        N_binaries = len(binaries)
+        N_bodies = len(bodies)
+        
+        code = SecularMultiple()
+        code.add_particles(particles)
+        
+        CONST_G = code.CONST_G
+        P1=2.0*np.pi*np.sqrt(a1**3/(CONST_G*(m1+m2)))
+        P2=2.0*np.pi*np.sqrt(a2**3/(CONST_G*(m1+m2+m3)))
+        P_LK12 = (P2**2/P1)*((m1+m2+m3)/m3)*pow(1.0-e2**2,3.0/2.0)
+        if args.verbose==True:
+            print("Ps",P1*1e-6,P2*1e-6)
+            print("P_LKs",P_LK12*1e-6)
+
+        N = 5000
+        tend = 1.e4
+
+        integration_methods = [[0,0],[0,1]]
+        #integration_methods = [0,0,0]
+        KS_use_V = [[True,True],[True,True]]
+        #KS_use_V = [True,True,False]
+        terms = [[False,True,True,True,True,True],[False,True,True,True,True,True]]
+       
+        import time
+        
+        data_arrays = []
+        
+        for index_combination,integration_method in enumerate(integration_methods):
+            if args.verbose==True:
+                print("index_combination",index_combination)
+
+            particles = Tools.create_nested_multiple(3, [m1,m2,m3],[a1,a2],[e1,e2],[i1,i2],[AP1,AP2],[LAN1,LAN2])
+            bodies = [x for x in particles if x.is_binary==False]
+            binaries = [x for x in particles if x.is_binary==True]
+
+            binaries[0].integration_method = integration_methods[index_combination][0]
+            binaries[1].integration_method = integration_methods[index_combination][1]
+
+            binaries[0].KS_use_perturbing_potential = KS_use_V[index_combination][0]
+            binaries[1].KS_use_perturbing_potential = KS_use_V[index_combination][1]
+
+            code = SecularMultiple()
+            code.add_particles(particles)
+
+            code.enable_root_finding = True
+            binaries[0].check_for_physical_collision_or_orbit_crossing=True
+            bodies[0].radius=1.0e-5
+            bodies[1].radius=1.0e-5
             
-            plot1.set_xlabel("$t/\mathrm{Myr}$")
-            plot2.set_xlabel("$t/\mathrm{Myr}$")
-            plot1.set_ylabel("$r_i/\mathrm{AU}$")
-            plot2.set_ylabel("$\mathrm{incl}_\mathrm{rel}/\mathrm{deg}$")
-        fig.savefig("example2.pdf")
-        pyplot.show()
+            code.include_double_averaging_corrections = terms[index_combination][0]
+            code.include_quadrupole_order_terms = terms[index_combination][1]
+            code.include_octupole_order_binary_pair_terms = terms[index_combination][2]
+            code.include_octupole_order_binary_triplet_terms = terms[index_combination][3]
+            code.include_hexadecupole_order_binary_pair_terms = terms[index_combination][4]
+            code.include_dotriacontupole_order_binary_pair_terms = terms[index_combination][5]
+            
+            if args.verbose==True:
+                print("Integration methods ",[x.integration_method for x in binaries],"KS_V",[x.KS_use_perturbing_potential for x in binaries],"terms",code.include_double_averaging_corrections,code.include_quadrupole_order_terms,code.include_octupole_order_binary_pair_terms,code.include_octupole_order_binary_triplet_terms,code.include_hexadecupole_order_binary_pair_terms,code.include_dotriacontupole_order_binary_pair_terms)
+        
+            a_print = [[] for x in range(N_binaries)]
+            e_print = [[] for x in range(N_binaries)]
+            i_print = [[] for x in range(N_binaries)]
+            rel_INCL_print = [[] for x in range(N_binaries)]
+            t_print = []
+
+            start = time.time()
+            t = 0.0
+            dt = tend/float(N)
+            while t<tend:
+                t+=dt
+                code.evolve_model(t)
+                
+                if args.verbose==True:
+                    print('t',t,'es',[o.e for o in binaries])
+
+                for i in range(N_binaries):
+                    a_print[i].append([binaries[i].a])
+                    e_print[i].append([binaries[i].e])
+                    i_print[i].append(binaries[i].INCL)
+                    rel_INCL_print[i].append(binaries[i].INCL_parent)
+                t_print.append(t)
+                
+            wall_time = time.time()-start
+            code.reset()
+            
+            t_print = np.array(t_print)
+            for i in range(N_binaries):
+                a_print[i] = np.array(a_print[i])
+                e_print[i] = np.array(e_print[i])
+                i_print[i] = np.array(i_print[i])
+
+            data = {'t_print':t_print,'a_print':a_print,'e_print':e_print,'i_print':i_print,'wall_time':wall_time,'integration_methods':integration_methods[index_combination],'KS_use_perturbing_potential':KS_use_V[index_combination],'terms':terms[index_combination]}
+            data_arrays.append(data)
 
 
+        if HAS_MATPLOTLIB==True and args.plot==True:
+            linestyles=['solid','dotted','dashed','-.']
+            linewidth=2.0
+
+            fig=pyplot.figure(figsize=(8,8))
+            plot1=fig.add_subplot(2,1,1,yscale="linear")
+            plot2=fig.add_subplot(2,1,2,yscale="log")
+
+            linewidths=[1.5,2.5,1.5]
+            colors =['k','tab:red','tab:orange']
+
+            for index_combination,data in enumerate(data_arrays):
+                linewidth=linewidths[index_combination]
+                linestyle=linestyles[index_combination]
+
+                N_binaries = len(data["a_print"])
+                color=colors[index_combination]
+                
+                if index_combination==0:
+                    label = "$\mathrm{Double\,averaged; \,WT=%s\,s}$"%round(data["wall_time"],1)
+                elif index_combination==1:
+                    label = "$\mathrm{Single\,averaged; \,WT=%s\,s}$"%round(data["wall_time"],1)
+                
+                for i in range(N_binaries):
+                    if i!=0:
+                        label=""
+                        label_nb=""
+
+                    plot1.plot(1.0e-6*data["t_print"],data["i_print"][i]*180.0/np.pi,color=color,linestyle=linestyle,linewidth=linewidth)
+                    plot2.plot(1.0e-6*data["t_print"],1.0-data["e_print"][i],color=color,linestyle=linestyle,linewidth=linewidth,label=label)
+            
+                fontsize=18
+                labelsize=18
+                
+            plot1.set_ylabel("$i_\mathrm{}\,(\mathrm{deg})$",fontsize=fontsize)
+            plot2.set_ylabel("$1-e$",fontsize=fontsize)
+            plot2.set_xlabel("$t/\mathrm{Myr}$",fontsize=fontsize)
+           
+            plots=[plot1,plot2]
+            for plot in plots:
+                plot.tick_params(axis='both', which ='major', labelsize = labelsize,bottom=True, top=True, left=True, right=True)
+
+            plot2.set_ylim(5e-4,1.1e0)
+            plot1.set_xticklabels([])
+            
+            ticks=plot1.get_yticks()
+            plot1.set_yticks(ticks[2::])
+
+            handles,labels = plot2.get_legend_handles_labels()
+            plot2.legend(handles,labels,loc="lower left",fontsize=0.8*fontsize)
+
+            fig.subplots_adjust(hspace=0.0,wspace=0.0)
+            fig.savefig("example3.pdf")
+            
+            if args.show==True:
+                pyplot.show()
+
+
+### Functions below are used for example 2 ###
 def reorientation_function(VRR_model,VRR_timescale,next_reorientation_time,orbit):
 
     print('='*50)
@@ -405,15 +611,11 @@ def compute_rho_star_r(r,gamma,n_0,r_0,m_star):
 def compute_sigma_r(r,gamma,n_0,r_0,m_star,M_MBH,CONST_G):
     return np.sqrt( CONST_G*M_MBH*(1.0/(r*(1.0+gamma)))*(1.0 + ((gamma+1.0)/(2.0*gamma-2.0))*compute_M_star_r(r,gamma,n_0,r_0,m_star)/M_MBH ) )
     
-    
+
 if __name__ == '__main__':
-    import sys
+    args = parse_arguments()
+    
     t=examples()
-    if len(sys.argv)>1:
-        i = int(sys.argv[1])
-        if i<0:
-            t.development_test()
-        else:
-            print('Running example %s'%i)
-            function = getattr(t, 'example%s'%i)
-            function()
+    print( 'Running example number',args.example,'; verbose =',args.verbose,'plot =',args.plot)
+    function = getattr(t, 'example%s'%args.example)
+    function(args)

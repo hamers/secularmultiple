@@ -20,6 +20,7 @@
 #include "tides.h"
 #include "external.h"
 #include "VRR.h"
+#include "tools.h"
 
 extern "C"
 {

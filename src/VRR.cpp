@@ -10,7 +10,7 @@
 extern "C"
 {
 
-double compute_VRR_perturbations(ParticlesMap *particlesMap, int index, double time)
+void compute_VRR_perturbations(ParticlesMap *particlesMap, int index, double time, double *hamiltonian)
 {
     
     int c;
@@ -25,7 +25,7 @@ double compute_VRR_perturbations(ParticlesMap *particlesMap, int index, double t
     double q_vec_unit[3];
     cross3(h_vec_unit,e_vec_unit,q_vec_unit);
     
-    double hamiltonian = 0.0;
+    //double hamiltonian = 0.0;
 
 
     /* Mass precesssion (for all models; in case of model 2: make sure not to include twice) */
@@ -403,7 +403,7 @@ double compute_VRR_perturbations(ParticlesMap *particlesMap, int index, double t
     }
 
 
-    return hamiltonian;
+//    return hamiltonian;
 }
 
 

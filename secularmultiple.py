@@ -11,7 +11,7 @@ A particle can repesent a binary (`is_binary = True') or a body (`is_binary = Fa
 The structure of the system is determined by linking to other particles with the attributes child1 and child2.
 Tidal interactions and relativistic corrections are included in an ad hoc fashion
 (tides: treating the companion as a single body, even if it is not; relativistic terms:
-only including binary-binary interactions).
+only including binary-binary interactions). Hybrid integration (averaged, or direct integration) is also supported.
     
 Includes routines for external perturbations (flybys & supernovae).
 
@@ -20,9 +20,9 @@ https://ui.adsabs.harvard.edu/abs/2016MNRAS.459.2827H (the original paper)
 https://ui.adsabs.harvard.edu/abs/2018MNRAS.476.4139H (updates with external perturbations)
 
 Make sure to first compile the code using `make'. The script `test_secularmultiple.py' can be used to test the
-installation. See `examples.py' for some examples (`examples_secular_chaos.py' and `examples_VRR.py contain more specific examples)
+installation. See `examples.py' for some examples.
 
-Adrian Hamers, February 2020
+Adrian Hamers, March 2020
 """
 
 
@@ -34,6 +34,7 @@ class SecularMultiple(object):
         self.__CONST_M_SUN = 1.0
         self.__CONST_R_SUN = 0.004649130343817401
         self.__CONST_L_SUN = 0.0002710404109745588
+        self.__CONST_km_per_s_to_AU_per_yr = 0.21094502112788768
 
         self.__relative_tolerance = 1.0e-14
         self.__absolute_tolerance_eccentricity_vectors = 1.0e-14
@@ -42,6 +43,7 @@ class SecularMultiple(object):
         self.__include_octupole_order_binary_triplet_terms = True
         self.__include_hexadecupole_order_binary_pair_terms = True
         self.__include_dotriacontupole_order_binary_pair_terms = True
+        self.__include_double_averaging_corrections = False
     
         self.__particles_committed = False
         self.model_time = 0.0
@@ -51,7 +53,7 @@ class SecularMultiple(object):
         self.error_code = 0
         
         self.enable_tides = False
-        self.enable_root_finding = False
+        self.enable_root_finding = True
         self.enable_VRR = False
 
         __current_dir__ = os.path.dirname(os.path.realpath(__file__))
@@ -70,7 +72,7 @@ class SecularMultiple(object):
         self.particles = []
 
     def init_lib(self):
-        self.lib.add_particle.argtypes = (ctypes.POINTER(ctypes.c_int),ctypes.c_int,ctypes.c_int)
+        self.lib.add_particle.argtypes = (ctypes.POINTER(ctypes.c_int),ctypes.c_bool,ctypes.c_bool)
         self.lib.add_particle.restype = ctypes.c_int
         
         self.lib.delete_particle.argtypes = (ctypes.c_int,)
@@ -109,7 +111,7 @@ class SecularMultiple(object):
         self.lib.set_stellar_type.argtypes = (ctypes.c_int,ctypes.c_int)
         self.lib.set_stellar_type.restype = ctypes.c_int
 
-        self.lib.set_orbital_elements.argtypes = (ctypes.c_int,ctypes.c_double,ctypes.c_double,ctypes.c_double,ctypes.c_double,ctypes.c_double,ctypes.c_double,ctypes.c_int)
+        self.lib.set_orbital_elements.argtypes = (ctypes.c_int,ctypes.c_double,ctypes.c_double,ctypes.c_double,ctypes.c_double,ctypes.c_double,ctypes.c_double,ctypes.c_bool)
         self.lib.set_orbital_elements.restype = ctypes.c_int
 
         self.lib.get_orbital_elements.argtypes = (ctypes.c_int,ctypes.POINTER(ctypes.c_double),ctypes.POINTER(ctypes.c_double),\
@@ -119,19 +121,28 @@ class SecularMultiple(object):
         self.lib.get_inclination_relative_to_parent.argtypes = (ctypes.c_int,ctypes.POINTER(ctypes.c_double))
         self.lib.get_inclination_relative_to_parent.restype = ctypes.c_int
 
-        self.lib.set_PN_terms.argtypes = (ctypes.c_int,ctypes.c_int,ctypes.c_int)
+        self.lib.get_relative_position_and_velocity.argtypes = (ctypes.c_int,ctypes.POINTER(ctypes.c_double),ctypes.POINTER(ctypes.c_double),ctypes.POINTER(ctypes.c_double),ctypes.POINTER(ctypes.c_double),ctypes.POINTER(ctypes.c_double),ctypes.POINTER(ctypes.c_double))
+        self.lib.get_relative_position_and_velocity.restype = ctypes.c_int
+
+        self.lib.get_absolute_position_and_velocity.argtypes = (ctypes.c_int,ctypes.POINTER(ctypes.c_double),ctypes.POINTER(ctypes.c_double),ctypes.POINTER(ctypes.c_double),ctypes.POINTER(ctypes.c_double),ctypes.POINTER(ctypes.c_double),ctypes.POINTER(ctypes.c_double))
+        self.lib.get_absolute_position_and_velocity.restype = ctypes.c_int
+
+        self.lib.set_PN_terms.argtypes = (ctypes.c_int,ctypes.c_bool,ctypes.c_bool)
         self.lib.set_PN_terms.restype = ctypes.c_int
 
-        self.lib.set_tides_terms.argtypes = (ctypes.c_int,ctypes.c_int,ctypes.c_int,ctypes.c_int,ctypes.c_int,ctypes.c_double,ctypes.c_double,ctypes.c_double,ctypes.c_double,ctypes.c_int,ctypes.c_double,ctypes.c_double,ctypes.c_double)
+        self.lib.set_integration_method.argtypes = (ctypes.c_int,ctypes.c_int,ctypes.c_bool)
+        self.lib.set_integration_method.restype = ctypes.c_int
+
+        self.lib.set_tides_terms.argtypes = (ctypes.c_int,ctypes.c_bool,ctypes.c_int,ctypes.c_bool,ctypes.c_bool,ctypes.c_double,ctypes.c_double,ctypes.c_double,ctypes.c_double,ctypes.c_int,ctypes.c_double,ctypes.c_double,ctypes.c_double)
         self.lib.set_tides_terms.restype = ctypes.c_int
 
-        self.lib.set_root_finding_terms.argtypes = (ctypes.c_int,ctypes.c_int,ctypes.c_int,ctypes.c_int,ctypes.c_int,ctypes.c_int,ctypes.c_int,ctypes.c_int,ctypes.c_double,ctypes.c_int,ctypes.c_int,ctypes.c_int)
+        self.lib.set_root_finding_terms.argtypes = (ctypes.c_int,ctypes.c_bool,ctypes.c_bool,ctypes.c_int,ctypes.c_int,ctypes.c_double,ctypes.c_bool,ctypes.c_bool,ctypes.c_double,ctypes.c_bool,ctypes.c_bool,ctypes.c_bool);
         self.lib.set_root_finding_terms.restype = ctypes.c_int
 
-        self.lib.set_root_finding_state.argtypes = (ctypes.c_int,ctypes.c_int,ctypes.c_int,ctypes.c_int,ctypes.c_int,ctypes.c_int,ctypes.c_int)
+        self.lib.set_root_finding_state.argtypes = (ctypes.c_int,ctypes.c_bool,ctypes.c_bool,ctypes.c_bool,ctypes.c_bool,ctypes.c_bool,ctypes.c_bool)
         self.lib.set_root_finding_state.restype = ctypes.c_int
 
-        self.lib.get_root_finding_state.argtypes = (ctypes.c_int,ctypes.POINTER(ctypes.c_int),ctypes.POINTER(ctypes.c_int),ctypes.POINTER(ctypes.c_int),ctypes.POINTER(ctypes.c_int),ctypes.POINTER(ctypes.c_int),ctypes.POINTER(ctypes.c_int))
+        self.lib.get_root_finding_state.argtypes = (ctypes.c_int,ctypes.POINTER(ctypes.c_bool),ctypes.POINTER(ctypes.c_bool),ctypes.POINTER(ctypes.c_bool),ctypes.POINTER(ctypes.c_bool),ctypes.POINTER(ctypes.c_bool),ctypes.POINTER(ctypes.c_bool))
         self.lib.get_root_finding_state.restype = ctypes.c_int
 
         self.lib.set_constants.argtypes = (ctypes.c_double,ctypes.c_double,ctypes.c_double,ctypes.c_double,ctypes.c_double)
@@ -139,7 +150,7 @@ class SecularMultiple(object):
 
         self.__set_constants_in_code()
         
-        self.lib.set_parameters.argtypes = (ctypes.c_double,ctypes.c_double,ctypes.c_bool,ctypes.c_bool,ctypes.c_bool,ctypes.c_bool,ctypes.c_bool)
+        self.lib.set_parameters.argtypes = (ctypes.c_double,ctypes.c_double,ctypes.c_bool,ctypes.c_bool,ctypes.c_bool,ctypes.c_bool,ctypes.c_bool,ctypes.c_bool)
         self.lib.set_parameters.restype = ctypes.c_int
 
         self.__set_parameters_in_code()
@@ -274,7 +285,7 @@ class SecularMultiple(object):
                 flag += self.lib.set_children(particle.index,particle.child1.index,particle.child2.index)
                 flag += self.lib.set_orbital_elements(particle.index,particle.a, particle.e, particle.TA, particle.INCL, particle.AP, particle.LAN, particle.sample_orbital_phase_randomly)
                 flag += self.lib.set_PN_terms(particle.index,particle.include_pairwise_1PN_terms,particle.include_pairwise_25PN_terms)
-                
+                flag += self.lib.set_integration_method(particle.index,particle.integration_method,particle.KS_use_perturbing_potential)
             else:
                 flag += self.lib.set_radius(particle.index,particle.radius,particle.radius_dot)
                 flag += self.lib.set_mass_dot(particle.index,particle.mass_dot)
@@ -307,7 +318,7 @@ class SecularMultiple(object):
         particle.mass = mass.value
 
         if self.enable_root_finding == True:
-            secular_breakdown_has_occurred,dynamical_instability_has_occurred,physical_collision_or_orbit_crossing_has_occurred,minimum_periapse_distance_has_occurred,RLOF_at_pericentre_has_occurred,GW_condition_has_occurred = ctypes.c_int(0),ctypes.c_int(0),ctypes.c_int(0),ctypes.c_int(0),ctypes.c_int(0),ctypes.c_int(0)
+            secular_breakdown_has_occurred,dynamical_instability_has_occurred,physical_collision_or_orbit_crossing_has_occurred,minimum_periapse_distance_has_occurred,RLOF_at_pericentre_has_occurred,GW_condition_has_occurred = ctypes.c_bool(False),ctypes.c_bool(False),ctypes.c_bool(False),ctypes.c_bool(False),ctypes.c_bool(False),ctypes.c_bool(False)
             flag += self.lib.get_root_finding_state(particle.index,ctypes.byref(secular_breakdown_has_occurred),ctypes.byref(dynamical_instability_has_occurred), \
                 ctypes.byref(physical_collision_or_orbit_crossing_has_occurred),ctypes.byref(minimum_periapse_distance_has_occurred),ctypes.byref(RLOF_at_pericentre_has_occurred),ctypes.byref(GW_condition_has_occurred))
             particle.secular_breakdown_has_occurred = secular_breakdown_has_occurred.value
@@ -318,10 +329,11 @@ class SecularMultiple(object):
             particle.GW_condition_has_occurred = GW_condition_has_occurred.value
             
         if particle.is_binary==True:
-            a,e,INCL,AP,LAN = ctypes.c_double(0.0),ctypes.c_double(0.0),ctypes.c_double(0.0),ctypes.c_double(0.0),ctypes.c_double(0.0)
-            flag += self.lib.get_orbital_elements(particle.index,ctypes.byref(a),ctypes.byref(e),ctypes.byref(INCL),ctypes.byref(AP),ctypes.byref(LAN))
+            a,e,TA,INCL,AP,LAN = ctypes.c_double(0.0),ctypes.c_double(0.0),ctypes.c_double(0.0),ctypes.c_double(0.0),ctypes.c_double(0.0),ctypes.c_double(0.0)
+            flag += self.lib.get_orbital_elements(particle.index,ctypes.byref(a),ctypes.byref(e),ctypes.byref(TA),ctypes.byref(INCL),ctypes.byref(AP),ctypes.byref(LAN))
             particle.a = a.value
             particle.e = e.value
+            particle.TA = TA.value
             particle.INCL = INCL.value
             particle.AP = AP.value
             particle.LAN = LAN.value
@@ -329,6 +341,16 @@ class SecularMultiple(object):
             INCL_parent = ctypes.c_double(0.0)
             flag += self.lib.get_inclination_relative_to_parent(particle.index,ctypes.byref(INCL_parent))
             particle.INCL_parent = INCL_parent.value
+            
+            x,y,z,vx,vy,vz = ctypes.c_double(0.0),ctypes.c_double(0.0),ctypes.c_double(0.0),ctypes.c_double(0.0),ctypes.c_double(0.0),ctypes.c_double(0.0)
+            flag = self.lib.get_relative_position_and_velocity(particle.index,ctypes.byref(x),ctypes.byref(y),ctypes.byref(z),ctypes.byref(vx),ctypes.byref(vy),ctypes.byref(vz))
+            particle.x = x.value
+            particle.y = y.value
+            particle.z = z.value
+            particle.vx = vx.value
+            particle.vy = vy.value
+            particle.vz = vz.value
+            
         else:
             radius,radius_dot = ctypes.c_double(0.0),ctypes.c_double(0.0)
             flag += self.lib.get_radius(particle.index,ctypes.byref(radius),ctypes.byref(radius_dot))
@@ -344,6 +366,15 @@ class SecularMultiple(object):
             particle.spin_vec_x = spin_vec_x.value
             particle.spin_vec_y = spin_vec_y.value
             particle.spin_vec_z = spin_vec_z.value
+
+            X,Y,Z,VX,VY,VZ = ctypes.c_double(0.0),ctypes.c_double(0.0),ctypes.c_double(0.0),ctypes.c_double(0.0),ctypes.c_double(0.0),ctypes.c_double(0.0)
+            flag = self.lib.get_absolute_position_and_velocity(particle.index,ctypes.byref(X),ctypes.byref(Y),ctypes.byref(Z),ctypes.byref(VX),ctypes.byref(VY),ctypes.byref(VZ))
+            particle.X = X.value
+            particle.Y = Y.value
+            particle.Z = Z.value
+            particle.VX = VX.value
+            particle.VY = VY.value
+            particle.VZ = VZ.value
             
         return flag
         
@@ -359,7 +390,7 @@ class SecularMultiple(object):
     def __set_parameters_in_code(self):
         self.lib.set_parameters(self.__relative_tolerance,self.__absolute_tolerance_eccentricity_vectors,self.__include_quadrupole_order_terms, \
             self.__include_octupole_order_binary_pair_terms,self.__include_octupole_order_binary_triplet_terms, \
-            self.__include_hexadecupole_order_binary_pair_terms,self.__include_dotriacontupole_order_binary_pair_terms)
+            self.__include_hexadecupole_order_binary_pair_terms,self.__include_dotriacontupole_order_binary_pair_terms,self.__include_double_averaging_corrections)
 
     def reset(self):
         self.__init__()
@@ -410,6 +441,15 @@ class SecularMultiple(object):
     def CONST_R_SUN(self, value):
         self.__CONST_R_SUN = value
         self.__set_constants_in_code()
+
+    @property
+    def CONST_km_per_s_to_AU_per_yr(self):
+        return self.__CONST_km_per_s_to_AU_per_yr
+
+    @CONST_km_per_s_to_AU_per_yr.setter
+    def CONST_km_per_s_to_AU_per_yr(self, value):
+        self.__CONST_km_per_s_to_AU_per_yr = value
+
 
     ### Parameters ###
     @property
@@ -475,9 +515,19 @@ class SecularMultiple(object):
         self.__include_dotriacontupole_order_binary_pair_terms = value
         self.__set_parameters_in_code()
 
+    @property
+    def include_double_averaging_corrections(self):
+        return self.__include_double_averaging_corrections
+
+    @include_double_averaging_corrections.setter
+    def include_double_averaging_corrections(self, value):
+        self.__include_double_averaging_corrections = value
+        self.__set_parameters_in_code()
+
     
 class Particle(object):
     def __init__(self, is_binary, mass=None, mass_dot=0.0, radius=1.0, radius_dot=0.0, child1=None, child2=None, a=None, e=None, TA=0.0, INCL=None, AP=None, LAN=None, \
+            integration_method = 0, KS_use_perturbing_potential = True, \
             stellar_type=1, \
             spin_vec_x=0.0, spin_vec_y=0.0, spin_vec_z=0.0, \
             include_pairwise_1PN_terms=False, include_pairwise_25PN_terms=False, \
@@ -488,7 +538,7 @@ class Particle(object):
             check_for_physical_collision_or_orbit_crossing=False,check_for_minimum_periapse_distance=False,check_for_minimum_periapse_distance_value=0.0,check_for_RLOF_at_pericentre=False,check_for_RLOF_at_pericentre_use_sepinsky_fit=False, check_for_GW_condition=False, \
             secular_breakdown_has_occurred=False, dynamical_instability_has_occurred=False, physical_collision_or_orbit_crossing_has_occurred=False, minimum_periapse_distance_has_occurred=False, RLOF_at_pericentre_has_occurred = False, GW_condition_has_occurred = False, \
             is_external=False, external_t_ref=0.0, external_r_p=0.0, \
-            sample_orbital_phase_randomly=True, instantaneous_perturbation_delta_mass=0.0, instantaneous_perturbation_delta_x=0.0, instantaneous_perturbation_delta_y=0.0, instantaneous_perturbation_delta_z=0.0, \
+            sample_orbital_phase_randomly=False, instantaneous_perturbation_delta_mass=0.0, instantaneous_perturbation_delta_x=0.0, instantaneous_perturbation_delta_y=0.0, instantaneous_perturbation_delta_z=0.0, \
             instantaneous_perturbation_delta_vx=0.0, instantaneous_perturbation_delta_vy=0.0, instantaneous_perturbation_delta_vz=0.0, \
             VRR_model=0, VRR_include_mass_precession=0, VRR_mass_precession_rate=0.0, VRR_Omega_vec_x=0.0, VRR_Omega_vec_y=0.0, VRR_Omega_vec_z=0.0, \
             VRR_eta_20_init=0.0, VRR_eta_a_22_init=0.0, VRR_eta_b_22_init=0.0, VRR_eta_a_21_init=0.0, VRR_eta_b_21_init=0.0, \
@@ -607,7 +657,9 @@ class Particle(object):
                     
                     self.include_pairwise_1PN_terms = include_pairwise_1PN_terms
                     self.include_pairwise_25PN_terms = include_pairwise_25PN_terms
-
+                    self.integration_method = integration_method
+                    self.KS_use_perturbing_potential = KS_use_perturbing_potential
+    
     def __repr__(self):
         if self.index is None:
             if self.is_binary == False:

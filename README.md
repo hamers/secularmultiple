@@ -6,7 +6,7 @@ A particle can repesent a binary (`is_binary = True`) or a body (`is_binary = Fa
 The structure of the system is determined by linking to other particles with the attributes `child1` and `child2`.
 Tidal interactions and relativistic corrections are included in an ad hoc fashion
 (tides: treating the companion as a single body, even if it is not; relativistic terms:
-only including binary-binary interactions).
+only including binary-binary interactions). Hybrid integration (averaged, or direct integration) is also supported.
     
 Includes routines for external perturbations (flybys & supernovae).
 

@@ -3,7 +3,8 @@
 
 #include "types.h"
 #include "external.h"
-#include "../interface.h" /* for parameters */
+#include "evolve.h"
+//#include "../interface.h" /* for parameters */
 #include "structure.h" /* for determine_binary_parents_and_levels */
 #include <stdio.h>
 
@@ -13,108 +14,13 @@ extern "C"
 void apply_user_specified_instantaneous_perturbation(ParticlesMap *particlesMap)
 {
     set_positions_and_velocities(particlesMap);
-    update_masses_positions_and_velocities_of_all_bodies(particlesMap);
+    update_masses_positions_and_velocities_of_all_bodies_instantaneous_perturbation(particlesMap);
     update_masses_positions_and_velocities_of_all_binaries(particlesMap);
     update_orbital_vectors_in_binaries_from_positions_and_velocities(particlesMap);
 }
-    
-
-void set_positions_and_velocities(ParticlesMap *particlesMap)
-{
-    /* Compute and set the positions and velocities of all bodies */
-    /* By default, sample orbital phases randomly 
-     * if particle.sample_orbital_phases_randomly == False: look for particle.true_anomaly */
-
-    //determine_binary_parents_and_levels(particlesMap,&N_bodies,&N_binaries,&N_root_finding);
-
-    set_binary_masses_from_body_masses(particlesMap);
-
-    double true_anomaly;
-
-    int seed = orbital_phases_random_seed;
-
-    int index = 0;
-    int i;
-    
-    double r[3],v[3],r_parent[3],v_parent[3],r_child1[3],v_child1[3],r_child2[3],v_child2[3];
-    double parent_mass,child1_mass,child2_mass;
-    double e_vec[3],h_vec[3];
-    double e;
-    
-    /*/ Go from the top of the system (level=0) downwards */
-    
-    ParticlesMapIterator it;
-    int highest_level = (*particlesMap)[0]->highest_level;
-    int level = 0;
-    while (level < highest_level)
-    {
-        for (it = particlesMap->begin(); it != particlesMap->end(); it++)
-        {
-            Particle *parent = (*it).second;
-            if ((parent->is_binary == 1) && (parent->level == level))
-            {
-                Particle *child1 = (*particlesMap)[parent->child1];
-                Particle *child2 = (*particlesMap)[parent->child2];
-                
-                child1_mass = child1->mass;
-                child2_mass = child2->mass;
-                parent_mass = parent->mass;
-                
-                get_e_and_h_vectors_from_particle(parent,e_vec,h_vec);
-                
-                if (parent->sample_orbital_phase_randomly == 0)
-                {
-                    true_anomaly = parent->true_anomaly;
-                }
-                else
-                {
-                    e = norm3(e_vec);
-                    true_anomaly = sample_random_true_anomaly(e,seed+index);
-                    //printf("parent->sample_orbital_phases_randomly  %d %g \n",parent->sample_orbital_phases_randomly,true_anomaly);
-                }
-
-                
-                from_orbital_vectors_to_cartesian(
-                    child1_mass,child2_mass,
-                    e_vec,h_vec,
-                    true_anomaly,
-                    r,v);
-                //printf("fov %g %g %g\n",e_vec[0],e_vec[1],e_vec[2]);
-                
-                if (parent->level == 0)
-                {
-                     /* without loss of generality, set the initial CM of the system to the origin */
-                    for (i=0; i<3; i++)
-                    {
-                        r_parent[i] = 0.0;
-                        v_parent[i] = 0.0;
-                    }
-                }
-                else
-                {
-                    get_position_and_velocity_vectors_from_particle(parent,r_parent,v_parent);
-                }
-                
-                for (i=0; i<3; i++)
-                {
-                    r_child1[i] = r_parent[i] + (child2_mass/parent_mass)*r[i];
-                    v_child1[i] = v_parent[i] + (child2_mass/parent_mass)*v[i];
-                    
-                    r_child2[i] = r_parent[i] - (child1_mass/parent_mass)*r[i];
-                    v_child2[i] = v_parent[i] - (child1_mass/parent_mass)*v[i];
-                }
-                set_position_and_velocity_vectors_in_particle(child1,r_child1,v_child1);
-                set_position_and_velocity_vectors_in_particle(child2,r_child2,v_child2);
-
-                parent->true_anomaly = true_anomaly;
-            }
-        }
-        level++;
-    }
-}
 
 
-void update_masses_positions_and_velocities_of_all_bodies(ParticlesMap *particlesMap)
+void update_masses_positions_and_velocities_of_all_bodies_instantaneous_perturbation(ParticlesMap *particlesMap)
 {
     /* Update the masses, positions and velocities of the bodies */
     
@@ -122,7 +28,7 @@ void update_masses_positions_and_velocities_of_all_bodies(ParticlesMap *particle
     for (it = particlesMap->begin(); it != particlesMap->end(); it++)
     {
         Particle *body = (*it).second;
-        if (body->is_binary == 0)
+        if (body->is_binary == false)
         {
             body->mass += body->instantaneous_perturbation_delta_mass;
             body->x += body->instantaneous_perturbation_delta_x;
@@ -140,172 +46,8 @@ void update_masses_positions_and_velocities_of_all_bodies(ParticlesMap *particle
     }
 }
 
-
-
-
-void update_masses_positions_and_velocities_of_all_binaries(ParticlesMap *particlesMap)
-{
-    set_binary_masses_from_body_masses(particlesMap);
-
-    //printf("update_masses_positions_and_velocities_of_all_binaries\n");
-    /* set binary positions and velocities -- to ensure this happens correctly, do this from highest level to lowest level */
- 
-    int i;
-    double child1_mass,child2_mass;
-    double r[3],v[3];
-    double r_child1[3],v_child1[3];
-    double r_child2[3],v_child2[3];
-    
-    ParticlesMapIterator it_p;
-    int highest_level = (*particlesMap)[0]->highest_level;
-    int level=highest_level;
-    while (level > -1)
-    {
-        for (it_p = particlesMap->begin(); it_p != particlesMap->end(); it_p++)
-        {
-            Particle *p = (*it_p).second;
-            if ((p->is_binary == 1) && (p->level == level))
-            {
-                Particle *child1 = (*particlesMap)[p->child1];
-                Particle *child2 = (*particlesMap)[p->child2];
-                
-                get_position_and_velocity_vectors_from_particle(child1,r_child1,v_child1);
-                get_position_and_velocity_vectors_from_particle(child2,r_child2,v_child2);
-                
-                //printf("level %d %d %d\n",p->level,child1->is_binary,child2->is_binary);
-
-                child1_mass = child1->mass;
-                child2_mass = child2->mass;
-
-                for (i=0; i<3; i++)
-                {
-                    //r[i] = r_child1[i] - r_child2[i];
-                    //v[i] = v_child1[i] - v_child2[i];
-                    r[i] = (r_child1[i]*child1_mass + r_child2[i]*child2_mass)/(child1_mass+child2_mass);
-                    v[i] = (v_child1[i]*child1_mass + v_child2[i]*child2_mass)/(child1_mass+child2_mass);
-
-                    //printf("r_child1[i] %g r[i] %g\n",r_child1[i],r[i]);
-                    //printf("r_child2[i] %g r[i] %g\n",r_child2[i],r[i]);
-
-                }
-            
-                set_position_and_velocity_vectors_in_particle(p,r,v);
-
-
-
-//                printf("level %d m %g hl %d\n",level,P_p->mass,highest_level);
-            }
-        }
-        level--;
-    }
-}
-
-
-void update_orbital_vectors_in_binaries_from_positions_and_velocities(ParticlesMap *particlesMap)
-{
-    //printf("update_orbital_vectors_in_binaries_from_positions_and_velocities\n");
-
-    int index = 0;
-    int i;
-    
-    double r[3],v[3],r_child1[3],v_child1[3],r_child2[3],v_child2[3];
-    double child1_mass,child2_mass;
-    double e_vec[3],h_vec[3];
-    
-    /*/ Go from the top of the system (level=0) downwards */
-    
-    ParticlesMapIterator it;
-    int highest_level = (*particlesMap)[0]->highest_level;
-    int level = 0;
-    while (level < highest_level)
-    {
-        for (it = particlesMap->begin(); it != particlesMap->end(); it++)
-        {
-            Particle *parent = (*it).second;
-            if ((parent->is_binary == 1) && (parent->level == level))
-            {
-                Particle *child1 = (*particlesMap)[parent->child1];
-                Particle *child2 = (*particlesMap)[parent->child2];
-                
-                child1_mass = child1->mass;
-                child2_mass = child2->mass;
-                
-                //get_position_and_velocity_vectors_from_particle(parent,r,v);
-                get_position_and_velocity_vectors_from_particle(child1,r_child1,v_child1);
-                get_position_and_velocity_vectors_from_particle(child2,r_child2,v_child2);
-                //printf("level %d\n",parent->level);
-                for (i=0; i<3; i++)
-                {
-                    r[i] = r_child1[i] - r_child2[i];
-                    v[i] = v_child1[i] - v_child2[i];
-                    //printf("r_child1[i] %g r[i] %g %g\n",r_child1[i],r[i],parent->x);
-                    //printf("r_child2[i] %g r[i] %g\n",r_child2[i],r[i]);
-                }
-                
-                from_cartesian_to_orbital_vectors(
-                    child1_mass,child2_mass,
-                    r,v,
-                    e_vec,h_vec);
-        
-                set_e_and_h_vectors_in_particle(parent,e_vec,h_vec);
-            }
-        }
-        level++;
-    }
-}
    
-
-
-
-void compute_position_vectors_external_particles(ParticlesMap *particlesMap, Particle *perturber, double time, double *r_per, double r_per_vec[3])
-{
-    
-    double dt = time - perturber->external_t_ref;
-    
-    #ifdef IGNORE
-    int perturber_path = perturber->path;
-    
-    if (perturber_path == 0) /* straight line */
-    {
-        double r0_per_vec[3] = {perturber->r0_vec_x,perturber->r0_vec_y,perturber->r0_vec_z};
-        double rdot_per_vec[3] = {perturber->rdot_vec_x,perturber->rdot_vec_y,perturber->rdot_vec_z};
-
-        for (int i=0; i<3; i++)
-        {
-            r_per_vec[i] = r0_per_vec[i] + rdot_per_vec[i]*dt;
-        }
-        
-        *r_per = norm3(r_per_vec);
-    }
-    else if (perturber_path == 1) /* hyperbolic orbit */
-    #endif
-    {
-        double e_f = perturber->external_e;
-        double rp_f = perturber->external_r_p;
-        double abs_a_f = rp_f/(e_f-1.0);
-        double total_internal_system_mass = (*particlesMap)[0]->total_system_mass;
-        double n_f = sqrt(CONST_G*total_internal_system_mass/(abs_a_f*abs_a_f*abs_a_f));
-        double mean_anomaly = n_f*dt;
-        double cos_true_anomaly,sin_true_anomaly;
-        compute_true_anomaly_from_mean_anomaly_hyperbolic_orbit(mean_anomaly,e_f,&cos_true_anomaly,&sin_true_anomaly);
-        
-        *r_per = rp_f*(1.0 + e_f)/(1.0 + e_f*cos_true_anomaly);            
-            
-        double e_f_hat_vec[3] = {perturber->e_vec_x,perturber->e_vec_y,perturber->e_vec_z};
-        double h_f_hat_vec[3] = {perturber->h_vec_x,perturber->h_vec_y,perturber->h_vec_z};
-        double q_f_hat_vec[3];
-        cross3(h_f_hat_vec,e_f_hat_vec,q_f_hat_vec);
-
-        //printf("evolve %g %g %g %g\n",r_per,mean_anomaly,cos_true_anomaly,total_internal_system_mass);
-        for (int i=0; i<3; i++)
-        {        
-            r_per_vec[i] = *r_per*(cos_true_anomaly*e_f_hat_vec[i] + sin_true_anomaly*q_f_hat_vec[i]);
-            //printf("compute_position_vectors_external_particles %g %g %g\n",r_per_vec[i]);
-            //r_per_vec[i] = r_per*(sin_true_anomaly*r_per_e_hat_vec[i] - cos_true_anomaly*r_per_q_hat_vec[i]);
-        }  
-    }  
-}
-    
+#ifdef IGNORE
 void update_position_vectors_external_particles(ParticlesMap *particlesMap, double time)
 {
     ParticlesMapIterator it_p;
@@ -327,26 +69,39 @@ void update_position_vectors_external_particles(ParticlesMap *particlesMap, doub
         }
     }
 }
+#endif
 
-
-double compute_EOM_binary_pairs_external_perturbation(ParticlesMap *particlesMap, int binary_index, int perturber_index, double time, bool compute_hamiltonian_only)
+void compute_EOM_Newtonian_external_perturbations(double time, ParticlesMap *particlesMap, Particle *p, double *hamiltonian, double *KS_V, bool compute_hamiltonian_only)
 {
-    /* last checked 16-09-16 */
+    ParticlesMapIterator it_f;
+    for (it_f = particlesMap->begin(); it_f != particlesMap->end(); it_f++)
+    {
+        Particle *f = (*it_f).second;
+        if (f->is_external == true)
+        {
+            compute_EOM_binary_pairs_external_perturbation(particlesMap,p->index,f->index,time,hamiltonian,KS_V,compute_hamiltonian_only);
+        }
+    }
+}
 
-    //printf("compute_EOM_binary_pairs_external_perturbation perturber_index %d\n",perturber_index);
-    
+void compute_EOM_binary_pairs_external_perturbation(ParticlesMap *particlesMap, int binary_index, int perturber_index, double time, double *hamiltonian, double *KS_V, bool compute_hamiltonian_only)
+{
+    /* last checked 07-03-20 */
+
     /* stop if no pairwise terms are to be computed */
     if ((include_quadrupole_order_terms == false) && (include_octupole_order_binary_pair_terms == false) && (include_hexadecupole_order_binary_pair_terms == false) && (include_dotriacontupole_order_binary_pair_terms == false) )
     {
-        return 0.0;
+        return;
     }
     
 
     Particle *binary = (*particlesMap)[binary_index];
     Particle *perturber = (*particlesMap)[perturber_index];
-    
-//    printf("compute_EOM_binary_pairs inner_binary_index %d outer_binary_index %d connecting_child_in_outer_binary %d P_sibling %d sibling_mass %g\n",inner_binary_index,outer_binary_index,connecting_child_in_outer_binary,P_sibling->index,P_sibling->mass);
 
+    #ifdef DEBUG
+    printf("external.cpp -- compute_EOM_binary_pairs_external_perturbation -- binary_index %d perturber_index %d time %g\n",binary_index,perturber_index,time);
+    #endif
+    
     double e = binary->e;
     double e_p2 = binary->e_p2;
     
@@ -372,13 +127,12 @@ double compute_EOM_binary_pairs_external_perturbation(ParticlesMap *particlesMap
     double M_per = perturber->mass;
     
     //printf("test t %.15g %.15g %.15g\n",t_per_ref,time,dt);
-    
     //printf("test %g %g %g %g %g %g %g %g\n",perturber->r0_vec_x,perturber->r0_vec_y,perturber->r0_vec_z,perturber->rdot_vec_x,perturber->rdot_vec_y,perturber->rdot_vec_z,perturber->t_ref,perturber->mass);
     
     double r_per_vec[3];
     double r_per;
     
-    compute_position_vectors_external_particles(particlesMap,perturber,time,&r_per,r_per_vec);
+    compute_position_vectors_external_particle(particlesMap,perturber,time,&r_per,r_per_vec);
     
     double r_per_p2 = r_per*r_per;
     double r_per_pm1 = 1.0/r_per;
@@ -512,7 +266,7 @@ double compute_EOM_binary_pairs_external_perturbation(ParticlesMap *particlesMap
         e_vec_dot_r_per_vec_pi1m1 = pow(e_vec_dot_r_per_vec,i1-1.0);
         j_vec_dot_r_per_vec_pi2m1 = pow(j_vec_dot_r_per_vec,i2-1.0);
 
-        mass_factor_children = fabs(M_bin_child1_pnm1 - minusone_pnp1*M_bin_child2_pnm1);
+        mass_factor_children = M_bin_child2_pnm1 - minusone_pnp1 * M_bin_child1_pnm1;
         hamiltonian_factor = minusone_pnp1*constant_Hamiltonian_factor*(mass_factor_children/M_bin_pnm1)*a_pn*r_per_pmn*A_n_m*r_per_pow_mi1mi2;
         
         binary_pair_hamiltonian += hamiltonian_factor*e_vec_dot_r_per_vec_pi1*j_vec_dot_r_per_vec_pi2*B_n_m_i1_i2;
@@ -546,57 +300,43 @@ double compute_EOM_binary_pairs_external_perturbation(ParticlesMap *particlesMap
             + e_vec_cross_grad_e_vec_H[i] );
     }
     //printf("test dedt  %g\n",dot3(binary->e_vec_unit,binary->de_vec_dt));
-    return 0.0;
-    
+    *hamiltonian = binary_pair_hamiltonian;
 }
 
-void compute_true_anomaly_from_mean_anomaly_hyperbolic_orbit(double mean_anomaly, double eccentricity,double *cos_true_anomaly,double *sin_true_anomaly)
+void compute_position_vectors_external_particle(ParticlesMap *particlesMap, Particle *perturber, double time, double *r_per, double r_per_vec[3])
 {
-    double eccentric_anomaly;
     
-    double fabs_mean_anomaly = fabs(mean_anomaly);
-    double sign_mean_anomaly;
+    double dt = time - perturber->external_t_ref;
 
-    sign_mean_anomaly = copysign( 1.0, mean_anomaly);
+    double e_f = perturber->external_e;
+    double rp_f = perturber->external_r_p;
+    double abs_a_f = rp_f/(e_f-1.0);
+    double total_internal_system_mass = (*particlesMap)[0]->total_system_mass;
+    double n_f = sqrt(CONST_G*total_internal_system_mass/(abs_a_f*abs_a_f*abs_a_f));
+    double mean_anomaly = n_f*dt;
+    double cos_true_anomaly,sin_true_anomaly;
+    compute_true_anomaly_from_mean_anomaly_hyperbolic_orbit(mean_anomaly,e_f,&cos_true_anomaly,&sin_true_anomaly);
     
-    double eccentric_anomaly_next;    
-    
-    if (fabs_mean_anomaly < 3.0*eccentricity)
-    {
-        double s1 = fabs_mean_anomaly/(eccentricity-1.0);
-        double s2 = pow( 6.0*fabs_mean_anomaly, 1.0/3.0);
-        eccentric_anomaly_next = sign_mean_anomaly*min(s1,s2);
-    }
-    else
-    {
-        eccentric_anomaly_next = sign_mean_anomaly*log(1.0 + 2.0*fabs_mean_anomaly/eccentricity);
-    }
-    
-    double epsilon = 1e-10;
-    double error = 2.0*epsilon; /* to start: anything larger than epsilon */
-    int j = 0;
-    while (error > epsilon)
-    {
-        j += 1;
-        eccentric_anomaly = eccentric_anomaly_next;
-        eccentric_anomaly_next = eccentric_anomaly + (eccentric_anomaly - eccentricity*sinh(eccentric_anomaly) + mean_anomaly)/(eccentricity*cosh(eccentric_anomaly) - 1.0);
-        error = fabs(eccentric_anomaly_next - eccentric_anomaly);
+    *r_per = rp_f*(1.0 + e_f)/(1.0 + e_f*cos_true_anomaly);            
         
-        if (j > 15)
-        {
-            //printf("test %d %g %g %g %g %g\n",j,mean_anomaly,eccentric_anomaly,eccentric_anomaly_next,error,epsilon);
-            break;
-        }
-    }
-    
-    double tau = sqrt( (eccentricity+1.0)/(eccentricity-1.0) )*tanh(0.5*eccentric_anomaly); /* tan(true_anomaly/2) */
-    double tau_sq = tau*tau;
-    double temp = 1.0/(1.0 + tau_sq);
-    
-    *cos_true_anomaly = (1.0 - tau_sq)*temp;
-    *sin_true_anomaly = 2.0*tau*temp;
-    
-    //printf("test %g %g\n",mean_anomaly,eccentric_anomaly);
+    double e_f_hat_vec[3] = {perturber->e_vec[0],perturber->e_vec[1],perturber->e_vec[2]};
+    double h_f_hat_vec[3] = {perturber->h_vec[0],perturber->h_vec[1],perturber->h_vec[2]};
+    double q_f_hat_vec[3];
+    cross3(h_f_hat_vec,e_f_hat_vec,q_f_hat_vec);
+
+    #ifdef DEBUG
+    printf("external.cpp -- compute_position_vectors_external_particle -- r_per %g mean_anomaly %g total_internal_system_mass %g\n",r_per,mean_anomaly,total_internal_system_mass);
+    #endif
+
+    for (int i=0; i<3; i++)
+    {        
+        r_per_vec[i] = *r_per*(cos_true_anomaly*e_f_hat_vec[i] + sin_true_anomaly*q_f_hat_vec[i]);
+        perturber->r_vec[i] = r_per_vec[i];
+        
+        #ifdef DEBUG
+        printf("external.cpp -- compute_position_vectors_external_particle -- r_vec %g\n",r_per_vec[i]);
+        #endif
+    }  
 }
 
 
@@ -608,8 +348,9 @@ int apply_external_perturbation_assuming_integrated_orbits(ParticlesMap *particl
     int N_particles = particlesMap->size();
     int N_bodies, N_binaries;
     int N_root_finding;
+    int N_ODE_equations;
     
-    determine_binary_parents_and_levels(particlesMap,&N_bodies,&N_binaries,&N_root_finding);
+    determine_binary_parents_and_levels(particlesMap,&N_bodies,&N_binaries,&N_root_finding,&N_ODE_equations);
     set_binary_masses_from_body_masses(particlesMap);
         
     
@@ -618,17 +359,19 @@ int apply_external_perturbation_assuming_integrated_orbits(ParticlesMap *particl
     {
         Particle *p = (*it_p).second;
         
-        if (p->is_binary == 1)
+        if (p->is_binary == true)
         {
 
             /* set e_vec & h_vec (for time integration done in set_initial_ODE_variables, but not in this case */ 
+            #ifdef IGNORE
             p->e_vec[0] = p->e_vec_x;
             p->e_vec[1] = p->e_vec_y;
             p->e_vec[2] = p->e_vec_z;
             p->h_vec[0] = p->h_vec_x;
             p->h_vec[1] = p->h_vec_y;
             p->h_vec[2] = p->h_vec_z;
-            p->set_ODE_quantities(0.0); /* argument is delta time, which is not needed/used in this case */
+            #endif
+            //p->set_ODE_quantities(0.0); /* argument is delta time, which is not needed/used in this case */
             for (it_f = particlesMap->begin(); it_f != particlesMap->end(); it_f++)
             {
                 Particle *f = (*it_f).second;
@@ -705,8 +448,8 @@ void apply_external_perturbation_assuming_integrated_orbits_binary_pair(Particle
         double n_f = sqrt(CONST_G*total_internal_system_mass/(abs_a_f*abs_a_f*abs_a_f));
     
         /* note: e & h vectors of external particles are assumed to be unit vectors */
-        double e_f_hat_vec[3] = {perturber->e_vec_x,perturber->e_vec_y,perturber->e_vec_z};
-        double j_f_hat_vec[3] = {perturber->h_vec_x,perturber->h_vec_y,perturber->h_vec_z}; 
+        double e_f_hat_vec[3] = {perturber->e_vec[0],perturber->e_vec[1],perturber->e_vec[2]};
+        double j_f_hat_vec[3] = {perturber->h_vec[0],perturber->h_vec[1],perturber->h_vec[2]}; 
 
         double e_f_p2 = e_f*e_f;
         double e_f_p4 = e_f_p2*e_f_p2;
@@ -842,7 +585,8 @@ void apply_external_perturbation_assuming_integrated_orbits_binary_pair(Particle
             q_f_pmn = pow(q_f_pm1,n);
             one_plus_e_f_pmn = pow(one_plus_e_f_pm1,n);
             
-            mass_factor_children = fabs(M_bin_child1_pnm1 - minusone_pnp1*M_bin_child2_pnm1);
+            //mass_factor_children = fabs(M_bin_child1_pnm1 - minusone_pnp1*M_bin_child2_pnm1);
+            mass_factor_children = M_bin_child2_pnm1 - minusone_pnp1 * M_bin_child1_pnm1;
             integrated_hamiltonian_factor = minusone_pnp1*constant_integrated_hamiltonian_factor*(mass_factor_children/M_bin_pnm1)*a_pn*q_f_pmn*one_plus_e_f_pmn*A_n_m;
             
             /* construct D function from table */
@@ -918,19 +662,22 @@ void apply_external_perturbation_assuming_integrated_orbits_binary_pair(Particle
     {
         //printf("pre i %d e %g h %g\n",i,e_vec[i],h_vec[i]);
         
-        e_vec[i] += (-1.0/(Lambda))*( e_vec_cross_grad_j_vec_H[i] \
+        binary->e_vec[i] += (-1.0/(Lambda))*( e_vec_cross_grad_j_vec_H[i] \
             + j_vec_cross_grad_e_vec_H[i] );
-        h_vec[i] += -1.0*( j_vec_cross_grad_j_vec_H[i] \
+        binary->h_vec[i] += -1.0*( j_vec_cross_grad_j_vec_H[i] \
             + e_vec_cross_grad_e_vec_H[i] );
         //printf("post i %d pre e %g h %g\n",i,e_vec[i],h_vec[i]);
     }
     
+
+    #ifdef IGNORE
     binary->e_vec_x = e_vec[0];
     binary->e_vec_y = e_vec[1];
     binary->e_vec_z = e_vec[2];
     binary->h_vec_x = h_vec[0];
     binary->h_vec_y = h_vec[1];
     binary->h_vec_z = h_vec[2];
+    #endif
 }
 
 double retrieve_D_function(int function_index, double ep, double ep_p2, double ef, double ef_p2, double ef_p4, double one_div_ef_p1, double one_div_ef_p2, double one_div_ef_p3, double ef_p2_minus_one, double sqrt_ef_p2_minus_one, double asec_minus_ef)

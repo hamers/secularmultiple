@@ -10,37 +10,12 @@
 extern "C"
 {
     
-int highest_particle_index = 0;
-ParticlesMap particlesMap;
-
-double relative_tolerance = 1.0e-14;
-double absolute_tolerance_eccentricity_vectors = 1.0e-14;
-bool include_quadrupole_order_terms = true;
-bool include_octupole_order_binary_pair_terms = true;
-bool include_octupole_order_binary_triplet_terms = true;
-bool include_hexadecupole_order_binary_pair_terms = true;
-bool include_dotriacontupole_order_binary_pair_terms = true;
-int orbital_phases_random_seed = 0;
-
-
-// Default constants //
-double CONST_G = 4.0*M_PI*M_PI; 
-double CONST_G_P2 = CONST_G*CONST_G;
-double CONST_G_P3 = CONST_G_P2*CONST_G;
-double CONST_C_LIGHT = 63239.72638679138;
-double CONST_C_LIGHT_P2 = CONST_C_LIGHT*CONST_C_LIGHT;
-double CONST_C_LIGHT_P4 = CONST_C_LIGHT_P2*CONST_C_LIGHT_P2;
-double CONST_C_LIGHT_P5 = CONST_C_LIGHT_P4*CONST_C_LIGHT;
-double CONST_MSUN = 1.0;
-double CONST_R_SUN = 0.004649130343817401;
-double CONST_L_SUN = 0.0002710404109745588;
-
 /*******************
 /* basic interface *
  ******************/
  
  
-int add_particle(int *index, int is_binary, int is_external)
+int add_particle(int *index, bool is_binary, bool is_external)
 {
     *index = highest_particle_index;
     Particle *p = new Particle(highest_particle_index, is_binary);
@@ -166,6 +141,19 @@ int get_radius(int index, double *radius, double *radius_dot)
     return 0;
 }
 
+int set_integration_method(int index, int integration_method, bool KS_use_perturbing_potential)
+{
+    if (index > highest_particle_index)
+    {
+      return -1;
+    }
+
+    Particle * p = particlesMap[index];
+    p->integration_method = integration_method;
+    p->KS_use_perturbing_potential = KS_use_perturbing_potential;
+    
+    return 0;
+}
 
 /****************************
 /* orbital vectors/elements *
@@ -180,12 +168,13 @@ int set_orbital_vectors(int index, double e_vec_x, double e_vec_y, double e_vec_
     }
   
     Particle *p = particlesMap[index];
-    p->e_vec_x = e_vec_x;
-    p->e_vec_y = e_vec_y;
-    p->e_vec_z = e_vec_z;
-    p->h_vec_x = h_vec_x;
-    p->h_vec_y = h_vec_y;
-    p->h_vec_z = h_vec_z;
+
+    p->e_vec[0] = e_vec_x;
+    p->e_vec[1] = e_vec_y;
+    p->e_vec[2] = e_vec_z;
+    p->h_vec[0] = h_vec_x;
+    p->h_vec[1] = h_vec_y;
+    p->h_vec[2] = h_vec_z;
     
     return 0;
 }
@@ -198,18 +187,19 @@ int get_orbital_vectors(int index, double *e_vec_x, double *e_vec_y, double *e_v
     }
   
     Particle *p = particlesMap[index];
-    *e_vec_x = p->e_vec_x;
-    *e_vec_y = p->e_vec_y;
-    *e_vec_z = p->e_vec_z;
-    *h_vec_x = p->h_vec_x;
-    *h_vec_y = p->h_vec_y;
-    *h_vec_z = p->h_vec_z;
+
+    *e_vec_x = p->e_vec[0];
+    *e_vec_y = p->e_vec[1];
+    *e_vec_z = p->e_vec[2];
+    *h_vec_x = p->h_vec[0];
+    *h_vec_y = p->h_vec[1];
+    *h_vec_z = p->h_vec[2];
 
     return 0;
 }
 
 int set_orbital_elements(int index, double semimajor_axis, double eccentricity, double true_anomaly, \
-    double inclination, double argument_of_pericenter, double longitude_of_ascending_node, int sample_orbital_phase_randomly)
+    double inclination, double argument_of_pericenter, double longitude_of_ascending_node, bool sample_orbital_phase_randomly)
 {
     if (index > highest_particle_index)
     {
@@ -224,24 +214,24 @@ int set_orbital_elements(int index, double semimajor_axis, double eccentricity, 
     }
 
     /* determine masses in all binaries */
-    int N_bodies, N_binaries, N_root_finding;
+    int N_bodies, N_binaries, N_root_finding,N_ODE_equations;
 
-    determine_binary_parents_and_levels(&particlesMap, &N_bodies, &N_binaries, &N_root_finding);
+    determine_binary_parents_and_levels(&particlesMap, &N_bodies, &N_binaries, &N_root_finding,&N_ODE_equations);
 
     set_binary_masses_from_body_masses(&particlesMap);
 
     compute_orbital_vectors_from_orbital_elements(p->child1_mass, p->child2_mass, semimajor_axis, eccentricity, \
         inclination, argument_of_pericenter, longitude_of_ascending_node, \
-        &(p->e_vec_x), &(p->e_vec_y), &(p->e_vec_z), &(p->h_vec_x), &(p->h_vec_y), &(p->h_vec_z) );
+        &(p->e_vec[0]), &(p->e_vec[1]), &(p->e_vec[2]), &(p->h_vec[0]), &(p->h_vec[1]), &(p->h_vec[2]) );
     
     p->true_anomaly = true_anomaly;
     p->sample_orbital_phase_randomly = sample_orbital_phase_randomly;
     //printf("soe a %g e %g TA %g I %g AP %g LAN %g SOPR %d\n",semimajor_axis,eccentricity,true_anomaly,inclination,argument_of_pericenter,longitude_of_ascending_node,sample_orbital_phase_randomly);
-    //printf("set_orbital_elements %g %g %g %g %g %g\n",p->e_vec_x,p->e_vec_y,p->e_vec_z,p->h_vec_x,p->h_vec_y,p->h_vec_z);
+    //printf("set_orbital_elements %g %g %g %g %g %g\n",p->e_vec[0],p->e_vec[1],p->e_vec[2],p->h_vec[0],p->h_vec[1],p->h_vec[2]);
     
     return 0;
 }
-int get_orbital_elements(int index, double *semimajor_axis, double *eccentricity, \
+int get_orbital_elements(int index, double *semimajor_axis, double *eccentricity, double *true_anomaly, \
     double *inclination, double *argument_of_pericenter, double *longitude_of_ascending_node)
 {
     if (index > highest_particle_index)
@@ -255,17 +245,19 @@ int get_orbital_elements(int index, double *semimajor_axis, double *eccentricity
     {
         return 0;
     }
-
+    
+    *true_anomaly = p->true_anomaly;
+    
     double h_tot_vec[3];
     compute_h_tot_vector(&particlesMap,h_tot_vec);
 
     /* determine masses in all binaries */
-    int N_bodies, N_binaries, N_root_finding;
-    determine_binary_parents_and_levels(&particlesMap, &N_bodies, &N_binaries, &N_root_finding);
+    int N_bodies, N_binaries, N_root_finding, N_ODE_equations;
+    determine_binary_parents_and_levels(&particlesMap, &N_bodies, &N_binaries, &N_root_finding,&N_ODE_equations);
     set_binary_masses_from_body_masses(&particlesMap);
     
     compute_orbital_elements_from_orbital_vectors(p->child1_mass, p->child2_mass, h_tot_vec, \
-        p->e_vec_x,p->e_vec_y,p->e_vec_z,p->h_vec_x,p->h_vec_y,p->h_vec_z,
+        p->e_vec[0],p->e_vec[1],p->e_vec[2],p->h_vec[0],p->h_vec[1],p->h_vec[2],
         semimajor_axis, eccentricity, inclination, argument_of_pericenter, longitude_of_ascending_node);
     return 0;
 }
@@ -353,12 +345,13 @@ int set_external_particle_properties(int index, double external_t_ref, double e,
 //    int N_bodies, N_binaries, N_root_finding;
 //    determine_binary_parents_and_levels(&particlesMap, &N_bodies, &N_binaries, &N_root_finding);
 //    set_binary_masses_from_body_masses(&particlesMap);
-    
+
     p->external_t_ref = external_t_ref;
     p->external_e = e;
     p->external_r_p = external_r_p;
+    
     /* e & h vectors for external particles are understood to be unit vectors */
-    compute_orbital_vectors_from_orbital_elements_unit(INCL,AP,LAN,&(p->e_vec_x), &(p->e_vec_y), &(p->e_vec_z), &(p->h_vec_x), &(p->h_vec_y), &(p->h_vec_z) ); 
+    compute_orbital_vectors_from_orbital_elements_unit(INCL,AP,LAN,&(p->e_vec[0]), &(p->e_vec[1]), &(p->e_vec[2]), &(p->h_vec[0]), &(p->h_vec[1]), &(p->h_vec[2]) ); 
     
     //printf("set_external_particle_properties inputs %g %g %g %g %g\n",external_t_ref, e, external_r_p, INCL, AP, LAN);
     //printf("set_external_particle_properties OE %g %g %g %g %g %g\n",p->e_vec_x,p->e_vec_y,p->e_vec_z,p->h_vec_x,p->h_vec_y,p->h_vec_z);
@@ -381,9 +374,9 @@ int set_spin_vector(int index, double spin_vec_x, double spin_vec_y, double spin
     }
   
     Particle * p = particlesMap[index];
-    p->spin_vec_x = spin_vec_x;
-    p->spin_vec_y = spin_vec_y;
-    p->spin_vec_z = spin_vec_z;
+    p->spin_vec[0] = spin_vec_x;
+    p->spin_vec[1] = spin_vec_y;
+    p->spin_vec[2] = spin_vec_z;
     //printf("set spin %g %g %g\n",spin_vec_x,spin_vec_y,spin_vec_z);
     return 0;
 }
@@ -395,9 +388,9 @@ int get_spin_vector(int index, double *spin_vec_x, double *spin_vec_y, double *s
     }
   
     Particle * p = particlesMap[index];
-    *spin_vec_x = p->spin_vec_x;
-    *spin_vec_y = p->spin_vec_y;
-    *spin_vec_z = p->spin_vec_z;
+    *spin_vec_x = p->spin_vec[0];
+    *spin_vec_y = p->spin_vec[1];
+    *spin_vec_z = p->spin_vec[2];
     
     return 0;
 }
@@ -431,7 +424,7 @@ int get_spin_vector_dot(int index, double *spin_vec_x_dot, double *spin_vec_y_do
     return 0;
 }
 
-
+#ifdef IGNORE
 int set_orbital_vectors_dot(int index, double e_vec_x_dot, double e_vec_y_dot, double e_vec_z_dot, \
     double h_vec_x_dot, double h_vec_y_dot, double h_vec_z_dot)
 {
@@ -468,8 +461,44 @@ int get_orbital_vectors_dot(int index, double *e_vec_x_dot, double *e_vec_y_dot,
     
     return 0;
 }
+#endif
 
+int get_relative_position_and_velocity(int index, double *x, double *y, double *z, double *vx, double *vy, double *vz)
+{
+    if (index > highest_particle_index)
+    {
+      return -1;
+    }
+  
+    Particle * p = particlesMap[index];
+    *x = p->r_vec[0];
+    *y = p->r_vec[1];
+    *z = p->r_vec[2];
+    *vx = p->v_vec[0];
+    *vy = p->v_vec[1];
+    *vz = p->v_vec[2];
+   
+    return 0;
+}
+int get_absolute_position_and_velocity(int index, double *X, double *Y, double *Z, double *VX, double *VY, double *VZ)
+{
+    if (index > highest_particle_index)
+    {
+      return -1;
+    }
+  
+    Particle * p = particlesMap[index];
+    *X = p->x;
+    *Y = p->y;
+    *Z = p->z;
+    *VX = p->vx;
+    *VY = p->vy;
+    *VZ = p->vz;
+   
+    return 0;
+}
 
+#ifdef IGNORE
 int set_position_vector(int index, double x, double y, double z)
 {
     if (index > highest_particle_index)
@@ -532,12 +561,13 @@ int get_velocity_vector(int index, double *x, double *y, double *z)
     
     return 0;
 }
+#endif
 
 /************
 /* PN terms *
  ************/
 
-int set_PN_terms(int index, int include_pairwise_1PN_terms, int include_pairwise_25PN_terms)
+int set_PN_terms(int index, bool include_pairwise_1PN_terms, bool include_pairwise_25PN_terms)
 {
     if (index > highest_particle_index)
     {
@@ -550,7 +580,7 @@ int set_PN_terms(int index, int include_pairwise_1PN_terms, int include_pairwise
         
     return 0;
 }
-int get_PN_terms(int index, int *include_pairwise_1PN_terms, int *include_pairwise_25PN_terms)
+int get_PN_terms(int index, bool *include_pairwise_1PN_terms, bool *include_pairwise_25PN_terms)
 {
     if (index > highest_particle_index)
     {
@@ -569,7 +599,7 @@ int get_PN_terms(int index, int *include_pairwise_1PN_terms, int *include_pairwi
 /*********
 /* tides *
  *********/
-int set_tides_terms(int index, int include_tidal_friction_terms, int tides_method, int include_tidal_bulges_precession_terms, int include_rotation_precession_terms, double minimum_eccentricity_for_tidal_precession, 
+int set_tides_terms(int index, bool include_tidal_friction_terms, int tides_method, bool include_tidal_bulges_precession_terms, bool include_rotation_precession_terms, double minimum_eccentricity_for_tidal_precession, 
     double tides_apsidal_motion_constant, double tides_gyration_radius, double tides_viscous_time_scale, int tides_viscous_time_scale_prescription, double convective_envelope_mass, double convective_envelope_radius, double luminosity)
 {
     if (index > highest_particle_index)
@@ -595,7 +625,7 @@ int set_tides_terms(int index, int include_tidal_friction_terms, int tides_metho
     //printf("set tides2 %g %g %g %d %g %g %g\n",tides_apsidal_motion_constant,tides_gyration_radius,tides_viscous_time_scale,tides_viscous_time_scale_prescription,convective_envelope_mass,convective_envelope_radius,luminosity);
     return 0;
 }
-int get_tides_terms(int index, int *include_tidal_friction_terms, int *tides_method, int *include_tidal_bulges_precession_terms, int *include_rotation_precession_terms, double *minimum_eccentricity_for_tidal_precession, 
+int get_tides_terms(int index, bool *include_tidal_friction_terms, int *tides_method, bool *include_tidal_bulges_precession_terms, bool *include_rotation_precession_terms, double *minimum_eccentricity_for_tidal_precession, 
     double *tides_apsidal_motion_constant, double *tides_gyration_radius, double *tides_viscous_time_scale, int *tides_viscous_time_scale_prescription, double *convective_envelope_mass, double *convective_envelope_radius, double *luminosity)
 {
     if (index > highest_particle_index)
@@ -663,8 +693,8 @@ int set_VRR_properties(int index, int VRR_model, int VRR_include_mass_precession
 /****************
 /* root finding *
  ****************/
-int set_root_finding_terms(int index, int check_for_secular_breakdown, int check_for_dynamical_instability, int dynamical_instability_criterion, int dynamical_instability_central_particle, int dynamical_instability_K_parameter,
-    int check_for_physical_collision_or_orbit_crossing, int check_for_minimum_periapse_distance, double check_for_minimum_periapse_distance_value, int check_for_RLOF_at_pericentre, int check_for_RLOF_at_pericentre_use_sepinsky_fit, int check_for_GW_condition)
+int set_root_finding_terms(int index, bool check_for_secular_breakdown, bool check_for_dynamical_instability, int dynamical_instability_criterion, int dynamical_instability_central_particle, double dynamical_instability_K_parameter,
+    bool check_for_physical_collision_or_orbit_crossing, bool check_for_minimum_periapse_distance, double check_for_minimum_periapse_distance_value, bool check_for_RLOF_at_pericentre, bool check_for_RLOF_at_pericentre_use_sepinsky_fit, bool check_for_GW_condition)
 {
     if (index > highest_particle_index)
     {
@@ -685,8 +715,8 @@ int set_root_finding_terms(int index, int check_for_secular_breakdown, int check
     p->check_for_GW_condition = check_for_GW_condition;
     return 0;
 }
-int get_root_finding_terms(int index, int *check_for_secular_breakdown, int *check_for_dynamical_instability, int *dynamical_instability_criterion, int *dynamical_instability_central_particle, int *dynamical_instability_K_parameter,
-    int *check_for_physical_collision_or_orbit_crossing, int *check_for_minimum_periapse_distance, double *check_for_minimum_periapse_distance_value, int *check_for_RLOF_at_pericentre, int *check_for_RLOF_at_pericentre_use_sepinsky_fit, int *check_for_GW_condition)
+int get_root_finding_terms(int index, bool *check_for_secular_breakdown, bool *check_for_dynamical_instability, int *dynamical_instability_criterion, int *dynamical_instability_central_particle, double *dynamical_instability_K_parameter,
+    bool *check_for_physical_collision_or_orbit_crossing, bool *check_for_minimum_periapse_distance, double *check_for_minimum_periapse_distance_value, bool *check_for_RLOF_at_pericentre, bool *check_for_RLOF_at_pericentre_use_sepinsky_fit, bool *check_for_GW_condition)
 {
     if (index > highest_particle_index)
     {
@@ -709,7 +739,7 @@ int get_root_finding_terms(int index, int *check_for_secular_breakdown, int *che
 }
 
 /* retrieve root finding state */
-int set_root_finding_state(int index, int secular_breakdown_has_occurred, int dynamical_instability_has_occurred, int physical_collision_or_orbit_crossing_has_occurred, int minimum_periapse_distance_has_occurred, int RLOF_at_pericentre_has_occurred, int GW_condition_has_occurred)
+int set_root_finding_state(int index, bool secular_breakdown_has_occurred, bool dynamical_instability_has_occurred, bool physical_collision_or_orbit_crossing_has_occurred, bool minimum_periapse_distance_has_occurred, bool RLOF_at_pericentre_has_occurred, bool GW_condition_has_occurred)
 {
     if (index > highest_particle_index)
     {
@@ -727,7 +757,7 @@ int set_root_finding_state(int index, int secular_breakdown_has_occurred, int dy
     
     return 0;
 }
-int get_root_finding_state(int index, int *secular_breakdown_has_occurred, int *dynamical_instability_has_occurred, int *physical_collision_or_orbit_crossing_has_occurred, int* minimum_periapse_distance_has_occurred, int *RLOF_at_pericentre_has_occurred, int *GW_condition_has_occurred)
+int get_root_finding_state(int index, bool *secular_breakdown_has_occurred, bool *dynamical_instability_has_occurred, bool *physical_collision_or_orbit_crossing_has_occurred, bool *minimum_periapse_distance_has_occurred, bool *RLOF_at_pericentre_has_occurred, bool *GW_condition_has_occurred)
 {
     if (index > highest_particle_index)
     {
@@ -763,8 +793,8 @@ int evolve_interface(double start_time, double time_step, double *output_time, d
 int determine_binary_parents_levels_and_masses_interface()
 {
     //printf("determine_binary_parents_levels_and_masses_interface\n");
-    int N_bodies, N_binaries, N_root_finding;
-    determine_binary_parents_and_levels(&particlesMap, &N_bodies, &N_binaries, &N_root_finding);
+    int N_bodies, N_binaries, N_root_finding, N_ODE_equations;
+    determine_binary_parents_and_levels(&particlesMap, &N_bodies, &N_binaries, &N_root_finding,&N_ODE_equations);
     set_binary_masses_from_body_masses(&particlesMap);
     
     return 0;
@@ -802,276 +832,6 @@ int set_positions_and_velocities_interface()
     return 0;
 }
 
-/**********************************************
-/* orbital element/vector conversion routines *
- **********************************************/
-int compute_h_tot_vector(ParticlesMap* particlesMap, double h_tot_vec[3])
-{
-    for (int i=0; i<3; i++)
-    {
-        h_tot_vec[i] = 0.0;
-    }
-    
-    ParticlesMapIterator it_p;
-    for (it_p = particlesMap->begin(); it_p != particlesMap->end(); it_p++)
-    {
-        Particle *p = (*it_p).second;
-        if (p->is_binary == 1)
-        {
-            h_tot_vec[0] += p->h_vec_x;
-            h_tot_vec[1] += p->h_vec_y;
-            h_tot_vec[2] += p->h_vec_z;
-        }
-    }
-    return 0;
-//    printf("compute_h_tot_vector %g %g %g\n",h_tot_vec[0],h_tot_vec[1],h_tot_vec[2]);
-}
-    
-int compute_orbital_vectors_from_orbital_elements(double child1_mass, double child2_mass, double semimajor_axis, double eccentricity, double inclination, double argument_of_pericenter,double longitude_of_ascending_node, double *e_vec_x, double *e_vec_y, double *e_vec_z, double *h_vec_x, double *h_vec_y, double *h_vec_z)
-{
-    double cos_INCL = cos(inclination);
-    double sin_INCL = sin(inclination);
-    double cos_AP = cos(argument_of_pericenter);
-    double sin_AP = sin(argument_of_pericenter);
-    double cos_LAN = cos(longitude_of_ascending_node);
-    double sin_LAN = sin(longitude_of_ascending_node);
-           
-    double h = (child1_mass*child2_mass*sqrt(CONST_G*semimajor_axis/(child1_mass+child2_mass)))*sqrt(1.0 - eccentricity*eccentricity);
-
-    *e_vec_x = eccentricity*(cos_LAN*cos_AP - sin_LAN*sin_AP*cos_INCL);
-    *e_vec_y = eccentricity*(sin_LAN*cos_AP + cos_LAN*sin_AP*cos_INCL);
-    *e_vec_z = eccentricity*(sin_AP*sin_INCL);
-    
-    *h_vec_x = h*sin_LAN*sin_INCL;
-    *h_vec_y = -h*cos_LAN*sin_INCL;
-    *h_vec_z = h*cos_INCL;
-
-    return 0;
-}
-
-int compute_orbital_vectors_from_orbital_elements_unit(double inclination, double argument_of_pericenter,double longitude_of_ascending_node, double *e_hat_vec_x, double *e_hat_vec_y, double *e_hat_vec_z, double *h_hat_vec_x, double *h_hat_vec_y, double *h_hat_vec_z)
-{
-    double cos_INCL = cos(inclination);
-    double sin_INCL = sin(inclination);
-    double cos_AP = cos(argument_of_pericenter);
-    double sin_AP = sin(argument_of_pericenter);
-    double cos_LAN = cos(longitude_of_ascending_node);
-    double sin_LAN = sin(longitude_of_ascending_node);
-           
-    *e_hat_vec_x = (cos_LAN*cos_AP - sin_LAN*sin_AP*cos_INCL);
-    *e_hat_vec_y = (sin_LAN*cos_AP + cos_LAN*sin_AP*cos_INCL);
-    *e_hat_vec_z = (sin_AP*sin_INCL);
-    
-    *h_hat_vec_x = sin_LAN*sin_INCL;
-    *h_hat_vec_y = -cos_LAN*sin_INCL;
-    *h_hat_vec_z = cos_INCL;
-
-    return 0;
-}
-
-int compute_orbital_elements_from_orbital_vectors(double child1_mass, double child2_mass, double h_tot_vec[3], double e_vec_x, double e_vec_y, double e_vec_z, double h_vec_x, double h_vec_y, double h_vec_z, double *semimajor_axis, double *eccentricity, double *inclination, double *argument_of_pericenter,double *longitude_of_ascending_node)
-{
-    double e_vec[3] = {e_vec_x,e_vec_y,e_vec_z};
-    double h_vec[3] = {h_vec_x,h_vec_y,h_vec_z};
-    double eccentricity_squared = norm3_squared(e_vec);
-    *eccentricity = sqrt(eccentricity_squared);
-    double h_squared = norm3_squared(h_vec);
-    *semimajor_axis = h_squared*(child1_mass+child2_mass)/( CONST_G*child1_mass*child1_mass*child2_mass*child2_mass*(1.0 - eccentricity_squared) );
-    double h = sqrt(h_squared);
-    
-//    double x_vec[3] = {1.0,0.0,0.0};
-//    double y_vec[3] = {0.0,1.0,0.0};
-//    double z_vec[3] = {0.0,0.0,1.0};
-
-    double h_tot = norm3(h_tot_vec);
-//    printf("h_tot %g x %g y %g z %g\n",h_tot,h_tot_vec[0],h_tot_vec[1],h_tot_vec[2]);
-    double x_vec[3], y_vec[3], z_vec[3];
-    for (int i=0; i<3; i++)
-    {
-        z_vec[i] = h_tot_vec[i]/h_tot;
-    }
-
-//    printf("test %g %g %g\n",z_vec[0],z_vec[1],z_vec[2]);
-    z_vec[0] = 0.0;
-    z_vec[1] = 0.0;
-    z_vec[2] = 1.0;
-
-    /* the above assumes that the total angular momentum vector does not change (i.e. no SNe effects etc.) */
-    
-    double f = 1.0/sqrt( z_vec[0]*z_vec[0] + z_vec[2]*z_vec[2] );
-    x_vec[0] = z_vec[2]*f;
-    x_vec[1] = 0.0;
-    x_vec[2] = -z_vec[0]*f;
-    cross3(z_vec,x_vec,y_vec);
-
-    double cos_INCL = dot3(h_vec,z_vec)/h;
-
-    double LAN_vec[3],LAN_vec_unit[3];
-    cross3(z_vec,h_vec,LAN_vec);
-    double LAN_vec_norm = norm3(LAN_vec);
-
-    double e_vec_unit[3],h_vec_unit[3];
-
-    for (int i=0; i<3; i++)
-    {
-        LAN_vec_unit[i] = LAN_vec[i]/LAN_vec_norm;
-        e_vec_unit[i] = e_vec[i]/(*eccentricity);
-        h_vec_unit[i] = h_vec[i]/h;
-    }
-
-    double sin_LAN = dot3(LAN_vec_unit,y_vec);
-    double cos_LAN = dot3(LAN_vec_unit,x_vec);
-
-    double e_vec_unit_cross_h_vec_unit[3];
-    cross3(e_vec_unit,h_vec_unit,e_vec_unit_cross_h_vec_unit);
-    double sin_AP = dot3(LAN_vec_unit,e_vec_unit_cross_h_vec_unit);
-    double cos_AP = dot3(LAN_vec_unit,e_vec_unit);
-
-    *inclination = acos(cos_INCL);
-    *argument_of_pericenter = atan2(sin_AP,cos_AP);
-    *longitude_of_ascending_node = atan2(sin_LAN,cos_LAN);
-    
-    return 0;
-}
-
-int get_inclination_relative_to_parent(int index, double *inclination_relative_to_parent)
-{
-
-    if (index > highest_particle_index)
-    {
-        return -1;
-    }
-  
-    Particle * p = particlesMap[index];
-    if (p->is_binary == 0)
-    {
-        *inclination_relative_to_parent = 0.0;
-        return 0;
-    }
-    if (p->parent == -1)
-    {
-        *inclination_relative_to_parent = 0.0;
-        return 0;
-    }
-
-    Particle *parent = particlesMap[p->parent];
-    
-
-    double h1_vec[3] = {p->h_vec_x,p->h_vec_y,p->h_vec_z};
-    double h2_vec[3] = {parent->h_vec_x,parent->h_vec_y,parent->h_vec_z};
-
-    double h1 = norm3(h1_vec);
-    double h2 = norm3(h2_vec);
-    
-    *inclination_relative_to_parent = acos( dot3(h1_vec,h2_vec)/(h1*h2) );
-    
-    return 0;
-}
-
-
-void compute_eccentric_anomaly_from_mean_anomaly(double mean_anomaly, double eccentricity, double *cos_eccentric_anomaly, double *sin_eccentric_anomaly)
-{
-    double eccentric_anomaly;
-    double eccentric_anomaly_next = mean_anomaly;
-    double epsilon = 1e-10;
-    double error = 2.0*epsilon;
-    int j = 0;
-    while (error > epsilon || j < 15)
-    {
-        j += 1;
-        eccentric_anomaly = eccentric_anomaly_next;
-        eccentric_anomaly_next = eccentric_anomaly - (eccentric_anomaly - eccentricity*sin(eccentric_anomaly) - mean_anomaly)/(1.0 - eccentricity*cos(eccentric_anomaly));
-        error = fabs(eccentric_anomaly_next - eccentric_anomaly);
-    }
-    *cos_eccentric_anomaly = cos(eccentric_anomaly);
-    *sin_eccentric_anomaly = sin(eccentric_anomaly);
-}
-
-void compute_true_anomaly_from_eccentric_anomaly(double cos_eccentric_anomaly, double sin_eccentric_anomaly, double eccentricity, double *cos_true_anomaly, double *sin_true_anomaly)
-{
-    *cos_true_anomaly = (cos_eccentric_anomaly - eccentricity)/(1.0 - eccentricity*cos_eccentric_anomaly);
-    *sin_true_anomaly = sqrt(1.0 - eccentricity*eccentricity)*sin_eccentric_anomaly/(1.0 - eccentricity*cos_eccentric_anomaly);
-}
-
-double compute_true_anomaly_from_mean_anomaly(double mean_anomaly, double eccentricity)
-{
-    double cos_eccentric_anomaly,sin_eccentric_anomaly;
-    double cos_true_anomaly,sin_true_anomaly;
-    
-    compute_eccentric_anomaly_from_mean_anomaly(mean_anomaly,eccentricity,&cos_eccentric_anomaly,&sin_eccentric_anomaly);
-    compute_true_anomaly_from_eccentric_anomaly(cos_eccentric_anomaly,sin_eccentric_anomaly,eccentricity,&cos_true_anomaly,&sin_true_anomaly);
-    double true_anomaly = atan2(sin_true_anomaly,cos_true_anomaly);
-
-    return true_anomaly;
-}
-
-double sample_random_true_anomaly(double eccentricity,int seed)
-{
-    srand(seed);
-    double x = ((double) rand() / (RAND_MAX));
-    double mean_anomaly = (2.0*x - 1.0)*M_PI;
-    double true_anomaly = compute_true_anomaly_from_mean_anomaly(mean_anomaly,eccentricity);
-
-    return true_anomaly;
-}
-
-void from_orbital_vectors_to_cartesian(double child1_mass, double child2_mass, double e_vec[3], double h_vec[3], double true_anomaly, double r[3], double v[3])
-{
-    double total_mass = child1_mass + child2_mass;
-    
-    double e = norm3(e_vec);
-    double h = norm3(h_vec);
-
-    double e_vec_unit[3],q_vec_unit[3],q_vec[3];
-    cross3(h_vec,e_vec,q_vec);
-    double q = norm3(q_vec);
-
-    int i;
-    for (i=0; i<3; i++)
-    {        
-        e_vec_unit[i] = e_vec[i]/e;
-        q_vec_unit[i] = q_vec[i]/q;        
-    }
-    
-    double e_p2 = e*e;
-    double j_p2 = 1.0 - e_p2;
-   
-    double a = h*h*total_mass/( CONST_G*child1_mass*child2_mass*child1_mass*child2_mass*j_p2 );
-
-    double cos_f = cos(true_anomaly);
-    double sin_f = sin(true_anomaly);
-    
-    double r_norm = a*j_p2/(1.0 + e*cos_f);
-    double v_norm = sqrt( CONST_G*total_mass/(a*j_p2) );
-    
-    for (i=0; i<3; i++)
-    {
-        r[i] = r_norm*( cos_f*e_vec_unit[i] + sin_f*q_vec_unit[i]);
-        v[i] = v_norm*( -sin_f*e_vec_unit[i] + (e + cos_f)*q_vec_unit[i] );
-    }
-}
-
-void from_cartesian_to_orbital_vectors(double child1_mass, double child2_mass, double r[3], double v[3], double e_vec[3], double h_vec[3])
-{
-    double total_mass = child1_mass + child2_mass;
-       
-    double v_dot_v = dot3(v,v);
-    double r_dot_v = dot3(r,v);
-    double r_norm = norm3(r);
-    for (int i=0; i<3; i++)
-    {
-        e_vec[i] = (r[i]*v_dot_v - v[i]*r_dot_v)/(CONST_G*total_mass) - r[i]/r_norm;
-    }
-
-    double mu = child1_mass*child2_mass/total_mass;
-    cross3(r,v,h_vec);
-    for (int i=0; i<3; i++)
-    {
-        h_vec[i] *= mu;
-    }
-}
-
-
 int get_de_dt(int index, double *de_dt)
 {
 
@@ -1093,43 +853,6 @@ int get_de_dt(int index, double *de_dt)
 }
 
 
-
-void get_position_and_velocity_vectors_from_particle(Particle *p, double r[3], double v[3])
-{
-    r[0] = p->x;
-    r[1] = p->y;
-    r[2] = p->z;
-    v[0] = p->vx;
-    v[1] = p->vy;
-    v[2] = p->vz;
-}
-void set_position_and_velocity_vectors_in_particle(Particle *p,  double r[3], double v[3])
-{
-    p->x = r[0];
-    p->y = r[1];
-    p->z = r[2];
-    p->vx = v[0];
-    p->vy = v[1];
-    p->vz = v[2];
-}
-void get_e_and_h_vectors_from_particle(Particle *p, double e_vec[3], double h_vec[3])
-{
-    e_vec[0] = p->e_vec_x;
-    e_vec[1] = p->e_vec_y;
-    e_vec[2] = p->e_vec_z;
-    h_vec[0] = p->h_vec_x;    
-    h_vec[1] = p->h_vec_y;    
-    h_vec[2] = p->h_vec_z;    
-}
-void set_e_and_h_vectors_in_particle(Particle *p, double e_vec[3], double h_vec[3])
-{
-    p->e_vec_x = e_vec[0];
-    p->e_vec_y = e_vec[1];
-    p->e_vec_z = e_vec[2];
-    p->h_vec_x = h_vec[0];
-    p->h_vec_y = h_vec[1];
-    p->h_vec_z = h_vec[2];
-}
 
 
 /************************
@@ -1159,7 +882,7 @@ int set_constants(double CONST_G_, double CONST_C_, double CONST_MSUN_, double C
 
 int set_parameters(double relative_tolerance_, double absolute_tolerance_eccentricity_vectors_, 
     bool include_quadrupole_order_terms_, bool include_octupole_order_binary_pair_terms_, bool include_octupole_order_binary_triplet_terms_,
-    bool include_hexadecupole_order_binary_pair_terms_, bool include_dotriacontupole_order_binary_pair_terms_)
+    bool include_hexadecupole_order_binary_pair_terms_, bool include_dotriacontupole_order_binary_pair_terms_, bool include_double_averaging_corrections_)
 {
     relative_tolerance = relative_tolerance_;
     absolute_tolerance_eccentricity_vectors = absolute_tolerance_eccentricity_vectors_;
@@ -1168,6 +891,7 @@ int set_parameters(double relative_tolerance_, double absolute_tolerance_eccentr
     include_octupole_order_binary_triplet_terms = include_octupole_order_binary_triplet_terms_;
     include_hexadecupole_order_binary_pair_terms = include_hexadecupole_order_binary_pair_terms_;
     include_dotriacontupole_order_binary_pair_terms = include_dotriacontupole_order_binary_pair_terms_;
+    include_double_averaging_corrections = include_double_averaging_corrections_;
     //printf("PARAMS %g %g %d %d %d %d %d\n",relative_tolerance,absolute_tolerance_eccentricity_vectors,include_quadrupole_order_terms,include_octupole_order_binary_pair_terms,include_octupole_order_binary_triplet_terms,include_hexadecupole_order_binary_pair_terms,include_dotriacontupole_order_binary_pair_terms);
     
     return 0;

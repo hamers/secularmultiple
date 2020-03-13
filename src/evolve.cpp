@@ -11,12 +11,17 @@ int evolve(ParticlesMap *particlesMap, double start_time, double time_step, doub
     int N_particles = particlesMap->size();
     int N_bodies, N_binaries;
     int N_root_finding;
+    int N_ODE_equations;
     
-    determine_binary_parents_and_levels(particlesMap,&N_bodies,&N_binaries,&N_root_finding);
+    determine_binary_parents_and_levels(particlesMap,&N_bodies,&N_binaries,&N_root_finding,&N_ODE_equations);
     set_binary_masses_from_body_masses(particlesMap);
 
-//    printf("N_bodies %d N_binaries %d N_particles %d N_root_finding %d\n",N_bodies,N_binaries,N_particles,N_root_finding);
+    initialize_direct_integration_quantities(particlesMap);
 
+    #ifdef DEBUG
+    printf("evolve.cpp -- evolve -- N_bodies %d N_binaries %d N_particles %d N_root_finding %d N_ODE_equations %d\n",N_bodies,N_binaries,N_particles,N_root_finding,N_ODE_equations);
+    #endif
+    
     /*********************
      * setup of UserData *
      ********************/
@@ -46,7 +51,7 @@ int evolve(ParticlesMap *particlesMap, double start_time, double time_step, doub
     double initial_ODE_timestep = 1.0e-6; /* one year */
     int maximum_number_of_internal_ODE_steps = 5e8;
     int maximum_number_of_convergence_failures = 100;    
-    double maximum_ODE_integration_time = 13.8e10;
+    //double maximum_ODE_integration_time = 13.8e10;
 
     /***************************
      * setup of ODE variables  *
@@ -58,8 +63,7 @@ int evolve(ParticlesMap *particlesMap, double start_time, double time_step, doub
 	y = y_out = y_abs_tol = NULL;
 	cvode_mem = NULL;
 
-    int number_of_ODE_variables = N_bodies*5 + N_binaries*6; // spin vectors + mass + radius for each body + e & h vectors for each binary
-//    printf("N_ODE %d\n",number_of_ODE_variables);
+    int number_of_ODE_variables = N_ODE_equations;
     
 //    data->number_of_ODE_variables = number_of_ODE_variables;
     y = N_VNew_Serial(number_of_ODE_variables);
@@ -69,7 +73,14 @@ int evolve(ParticlesMap *particlesMap, double start_time, double time_step, doub
     y_abs_tol = N_VNew_Serial(number_of_ODE_variables); 
 	if (check_flag((void *)y_abs_tol, "N_VNew_Serial", 0)) return 1;         
 
+    
     set_initial_ODE_variables(particlesMap, y, y_abs_tol,abs_tol_spin_vec,abs_tol_e_vec,abs_tol_h_vec);
+    #ifdef DEBUG
+    for (int i=1; i<=N_ODE_equations; i++)
+    {
+        printf("evolve.cpp -- evolve -- i %d Ith(y,i) %g Ith(y_abs,i) %g\n",i,Ith(y,i),Ith(y_abs_tol,i));
+    }
+    #endif
 
     /***************************
      * setup of ODE integrator *
@@ -167,9 +178,14 @@ int evolve(ParticlesMap *particlesMap, double start_time, double time_step, doub
      * y_out -> particlesMap   *
      * ************************/
 
-    extract_final_ODE_variables(particlesMap,y_out);
-    update_position_vectors_external_particles(particlesMap,integrator_end_time);
+    double actual_time_step = integrator_end_time - start_time;
 
+    extract_final_ODE_variables(particlesMap,y_out);
+    set_binary_masses_from_body_masses(particlesMap); /* update masses in binaries, needed for direct integration update below */
+    process_direct_integration_quantities(particlesMap,actual_time_step); /* update relative pos & vel, as well as new e, h vectors & TA */
+
+    set_positions_and_velocities(particlesMap); /* update positions and velocities of all bodies based on updated binary e, h, and TA */
+    
     *hamiltonian = data->hamiltonian;
     
     N_VDestroy_Serial(y);
@@ -178,8 +194,6 @@ int evolve(ParticlesMap *particlesMap, double start_time, double time_step, doub
     CVodeFree(&cvode_mem);
 
 	return 0;
-    
-    
 }
 
 
