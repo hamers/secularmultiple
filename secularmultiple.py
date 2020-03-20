@@ -294,8 +294,8 @@ class SecularMultiple(object):
                 
                 if set_instantaneous_perturbation_properties==True:
                     flag += self.lib.set_instantaneous_perturbation_properties(particle.index,particle.instantaneous_perturbation_delta_mass, \
-                        particle.instantaneous_perturbation_delta_x,particle.instantaneous_perturbation_delta_y,particle.instantaneous_perturbation_delta_z, \
-                        particle.instantaneous_perturbation_delta_vx,particle.instantaneous_perturbation_delta_vy,particle.instantaneous_perturbation_delta_vz)
+                        particle.instantaneous_perturbation_delta_X,particle.instantaneous_perturbation_delta_Y,particle.instantaneous_perturbation_delta_Z, \
+                        particle.instantaneous_perturbation_delta_VX,particle.instantaneous_perturbation_delta_VY,particle.instantaneous_perturbation_delta_VZ)
         else:
             flag += self.lib.set_external_particle_properties(particle.index, particle.external_t_ref, particle.e, particle.external_r_p, particle.INCL, particle.AP, particle.LAN)
     
@@ -538,8 +538,8 @@ class Particle(object):
             check_for_physical_collision_or_orbit_crossing=False,check_for_minimum_periapse_distance=False,check_for_minimum_periapse_distance_value=0.0,check_for_RLOF_at_pericentre=False,check_for_RLOF_at_pericentre_use_sepinsky_fit=False, check_for_GW_condition=False, \
             secular_breakdown_has_occurred=False, dynamical_instability_has_occurred=False, physical_collision_or_orbit_crossing_has_occurred=False, minimum_periapse_distance_has_occurred=False, RLOF_at_pericentre_has_occurred = False, GW_condition_has_occurred = False, \
             is_external=False, external_t_ref=0.0, external_r_p=0.0, \
-            sample_orbital_phase_randomly=False, instantaneous_perturbation_delta_mass=0.0, instantaneous_perturbation_delta_x=0.0, instantaneous_perturbation_delta_y=0.0, instantaneous_perturbation_delta_z=0.0, \
-            instantaneous_perturbation_delta_vx=0.0, instantaneous_perturbation_delta_vy=0.0, instantaneous_perturbation_delta_vz=0.0, \
+            sample_orbital_phase_randomly=False, instantaneous_perturbation_delta_mass=0.0, instantaneous_perturbation_delta_X=0.0, instantaneous_perturbation_delta_Y=0.0, instantaneous_perturbation_delta_Z=0.0, \
+            instantaneous_perturbation_delta_VX=0.0, instantaneous_perturbation_delta_VY=0.0, instantaneous_perturbation_delta_VZ=0.0, \
             VRR_model=0, VRR_include_mass_precession=0, VRR_mass_precession_rate=0.0, VRR_Omega_vec_x=0.0, VRR_Omega_vec_y=0.0, VRR_Omega_vec_z=0.0, \
             VRR_eta_20_init=0.0, VRR_eta_a_22_init=0.0, VRR_eta_b_22_init=0.0, VRR_eta_a_21_init=0.0, VRR_eta_b_21_init=0.0, \
             VRR_eta_20_final=0.0, VRR_eta_a_22_final=0.0, VRR_eta_b_22_final=0.0, VRR_eta_a_21_final=0.0, VRR_eta_b_21_final=0.0, \
@@ -598,12 +598,12 @@ class Particle(object):
 
         self.sample_orbital_phase_randomly=sample_orbital_phase_randomly
         self.instantaneous_perturbation_delta_mass=instantaneous_perturbation_delta_mass
-        self.instantaneous_perturbation_delta_x=instantaneous_perturbation_delta_x
-        self.instantaneous_perturbation_delta_y=instantaneous_perturbation_delta_y
-        self.instantaneous_perturbation_delta_z=instantaneous_perturbation_delta_z
-        self.instantaneous_perturbation_delta_vx=instantaneous_perturbation_delta_vx
-        self.instantaneous_perturbation_delta_vy=instantaneous_perturbation_delta_vy
-        self.instantaneous_perturbation_delta_vz=instantaneous_perturbation_delta_vz
+        self.instantaneous_perturbation_delta_X=instantaneous_perturbation_delta_X
+        self.instantaneous_perturbation_delta_Y=instantaneous_perturbation_delta_Y
+        self.instantaneous_perturbation_delta_Z=instantaneous_perturbation_delta_Z
+        self.instantaneous_perturbation_delta_VX=instantaneous_perturbation_delta_VX
+        self.instantaneous_perturbation_delta_VY=instantaneous_perturbation_delta_VY
+        self.instantaneous_perturbation_delta_VZ=instantaneous_perturbation_delta_VZ
 
         self.VRR_model = VRR_model
         self.VRR_include_mass_precession = VRR_include_mass_precession

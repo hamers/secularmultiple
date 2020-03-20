@@ -8,7 +8,8 @@ from secularmultiple import SecularMultiple,Particle,Tools
 Several routines for testing the code/installation. 
 To run all tests, simply run `python test_secularmultiple.py'.
 Specific tests can be run with the command line --t i, where i is the
-number of the test.
+number of the test. Use --verbose for verbose terminal output, and --plot to
+make and show plots if applicable (required Matplotlib).
 
 Adrian Hamers, March 2020
 """
@@ -982,11 +983,401 @@ class test_secularmultiple():
             
             pyplot.show()
 
+    def test11(self,args):
+        print("Test flybys module: instantaneous change -- SNe in binary")
+
+        code = SecularMultiple()
+        CONST_G = code.CONST_G
+        CONST_km_per_s_to_AU_per_yr = code.CONST_km_per_s_to_AU_per_yr
+                
+        a1 = 10.0
+        e1 = 0.1
+        m1 = 1.0
+        m2 = 0.8
+
+        INCL1 = 0.1
+        AP1 = 0.2
+        LAN1 = 0.3
+        f1 = 60.5*np.pi/180.0
+
+        particles = Tools.create_nested_multiple(2, [m1,m2], [a1], [e1], [INCL1], [AP1], [LAN1] )
+
+        binary = particles[2]
+        binary.sample_orbital_phase_randomly = False
+        binary.TA = f1
+        
+        delta_m1 = -0.5
+        V_k_vec = np.array([0.0,1.0,2.0])*CONST_km_per_s_to_AU_per_yr
+        #V_k_vec = np.array([0.0,0.0,0.0])
+
+        particles[0].instantaneous_perturbation_delta_mass = delta_m1
+        particles[0].instantaneous_perturbation_delta_VX = V_k_vec[0]
+        particles[0].instantaneous_perturbation_delta_VY = V_k_vec[1]
+        particles[0].instantaneous_perturbation_delta_VZ = V_k_vec[2]
+        ### TO DO: rename vx->VX
+
+        code.add_particles(particles)
+
+        if args.verbose==True:
+            print( '='*50)
+            print( 'pre')
+            print( 'a',binary.a,'e',binary.e,'INCL',binary.INCL*180.0/np.pi,'AP',binary.AP*180.0/np.pi,'LAN',binary.LAN*180.0/np.pi,binary.mass,'TA',binary.TA)
+
+        code.apply_user_specified_instantaneous_perturbation()
+        
+        if args.verbose==True:
+            print( '='*50)
+            print( 'post')
+            print( 'a',binary.a,'e',binary.e,'INCL',binary.INCL*180.0/np.pi,'AP',binary.AP*180.0/np.pi,'LAN',binary.LAN*180.0/np.pi,binary.mass,'TA',binary.TA)
+
+        ### Compute analytic result (e.g., https://ui.adsabs.harvard.edu/abs/2016ComAC...3....6T/abstract) ###
+        r1 = a1*(1.0-e1**2)/(1.0 + e1*np.cos(f1))
+        v1_tilde = np.sqrt( CONST_G*(m1+m2)/(a1*(1.0-e1**2) ) )
+        e1_vec_hat,j1_vec_hat = compute_e_and_j_hat_vectors(INCL1,AP1,LAN1)
+        q1_vec_hat = np.cross(j1_vec_hat,e1_vec_hat)
+        r1_vec = r1*( e1_vec_hat * np.cos(f1) + q1_vec_hat * np.sin(f1) )
+        v1_vec = v1_tilde*( -e1_vec_hat * np.sin(f1) + q1_vec_hat * (e1 + np.cos(f1) ) )
+
+        r1_dot_v1 = np.sum([x*y for x,y in zip(r1_vec,v1_vec)])
+        r1_dot_V_k = np.sum([x*y for x,y in zip(r1_vec,V_k_vec)])
+        v1_dot_V_k = np.sum([x*y for x,y in zip(v1_vec,V_k_vec)])
+        V_k_dot_V_k = np.sum([x*y for x,y in zip(V_k_vec,V_k_vec)])
+        v1c_sq = CONST_G*(m1+m2)/a1
+        
+        a1_p = a1*(1.0 + delta_m1/(m1+m2))*pow( 1.0 + 2.0*(a1/r1)*(delta_m1/(m1+m2)) - 2.0*v1_dot_V_k/v1c_sq - V_k_dot_V_k/v1c_sq, -1.0)
+        j1_p = pow( (m1+m2)/(m1+m2+delta_m1), 2.0)*(1.0 + 2.0*(a1/r1)*(delta_m1/(m1+m2)) - 2.0*v1_dot_V_k/v1c_sq - V_k_dot_V_k/v1c_sq)*( 1.0 - e1**2 \
+            + (1.0/(CONST_G*(m1+m2)*a1))*( r1**2*( 2.0*v1_dot_V_k + V_k_dot_V_k) - 2.0*r1_dot_v1*r1_dot_V_k - r1_dot_V_k**2) )
+        e1_p = np.sqrt(1.0 - j1_p)
+        
+        if args.verbose==True:
+            print( 'analytic results Toonen+16: ','new a1 = ',a1_p,'; new e1 = ',e1_p)
+        
+        N_r = 10
+        assert round(binary.a,N_r) == round(a1_p,N_r)
+        assert round(binary.e,N_r) == round(e1_p,N_r)
+        
+        print("Test passed")
+
+        code.reset()
+        
+    def test12(self,args):
+        print("Test flybys module: instantaneous change -- SNe in triple")
+
+        code = SecularMultiple()
+        CONST_G = code.CONST_G
+        CONST_km_per_s_to_AU_per_yr = code.CONST_km_per_s_to_AU_per_yr        
+        
+        m1 = 1.0
+        m2 = 0.8
+        m3 = 1.2
+        a1 = 10.0
+        a2 = 100.0
+        e1 = 0.1
+        e2 = 0.3
+        INCL1 = 0.1
+        INCL2 = 0.5
+        AP1 = 0.1
+        AP2 = 1.0
+        LAN1 = 0.1
+        LAN2 = 2.0
+        f1 = 60.5*np.pi/180.0
+        f2 = 30.5*np.pi/180.0
+
+        INCLs = [INCL1,INCL2]
+        APs = [AP1,AP2]
+        LANs = [LAN1,LAN2]
+        masses = [m1,m2,m3]
+        particles = Tools.create_nested_multiple(3,masses, [a1,a2], [e1,e2], INCLs, APs, LANs)
+        
+        inner_binary = particles[3]
+        outer_binary = particles[4]
+        inner_binary.sample_orbital_phase_randomly = 0
+        outer_binary.sample_orbital_phase_randomly = 0
+        inner_binary.TA = f1
+        outer_binary.TA = f2
+        
+        delta_m1 = -0.3
+        
+        km_p_s_to_AU_p_yr = 0.21094502112788768
+        V_k_vec = np.array([1.0,2.0,2.0])*CONST_km_per_s_to_AU_per_yr
+        V_k_vec = np.array([0.0,0.0,0.0])
+        
+        particles[0].instantaneous_perturbation_delta_mass = delta_m1
+        particles[0].instantaneous_perturbation_delta_VX = V_k_vec[0]
+        particles[0].instantaneous_perturbation_delta_VY = V_k_vec[1]
+        particles[0].instantaneous_perturbation_delta_VZ = V_k_vec[2]
+
+        code.add_particles(particles)
+        
+        if args.verbose==True:
+            print( '='*50)
+            print( 'pre')
+            print( 'inner','a',inner_binary.a,'e',inner_binary.e,'INCL',inner_binary.INCL*180.0/np.pi,'AP',inner_binary.AP*180.0/np.pi,'LAN',inner_binary.LAN*180.0/np.pi,'m',inner_binary.mass)
+            print( 'outer','a',outer_binary.a,'e',outer_binary.e,'INCL',outer_binary.INCL*180.0/np.pi,'AP',outer_binary.AP*180.0/np.pi,'LAN',outer_binary.LAN*180.0/np.pi,'m',outer_binary.mass)
+        
+        code.apply_user_specified_instantaneous_perturbation()
+        
+        if args.verbose==True:
+            print( '='*50)
+            print( 'post')
+            print( 'inner','a',inner_binary.a,'e',inner_binary.e,'INCL',inner_binary.INCL*180.0/np.pi,'AP',inner_binary.AP*180.0/np.pi,'LAN',inner_binary.LAN*180.0/np.pi,'m',inner_binary.mass)
+            print( 'outer','a',outer_binary.a,'e',outer_binary.e,'INCL',outer_binary.INCL*180.0/np.pi,'AP',outer_binary.AP*180.0/np.pi,'LAN',outer_binary.LAN*180.0/np.pi,'m',outer_binary.mass)
+
+        
+        ### Compute analytic result (e.g., https://ui.adsabs.harvard.edu/abs/2016ComAC...3....6T/abstract) ###
+        r1 = a1*(1.0-e1**2)/(1.0 + e1*np.cos(f1))
+        v1_tilde = np.sqrt( CONST_G*(m1+m2)/(a1*(1.0-e1**2) ) )
+        e1_vec_hat,j1_vec_hat = compute_e_and_j_hat_vectors(INCL1,AP1,LAN1)
+        q1_vec_hat = np.cross(j1_vec_hat,e1_vec_hat)
+        r1_vec = r1*( e1_vec_hat * np.cos(f1) + q1_vec_hat * np.sin(f1) )
+        v1_vec = v1_tilde*( -e1_vec_hat * np.sin(f1) + q1_vec_hat * (e1 + np.cos(f1) ) )
+
+        r1_dot_v1 = np.sum([x*y for x,y in zip(r1_vec,v1_vec)])
+        r1_dot_V_k = np.sum([x*y for x,y in zip(r1_vec,V_k_vec)])
+        v1_dot_V_k = np.sum([x*y for x,y in zip(v1_vec,V_k_vec)])
+        V_k_dot_V_k = np.sum([x*y for x,y in zip(V_k_vec,V_k_vec)])
+        v1c_sq = CONST_G*(m1+m2)/a1
+
+        r2 = a2*(1.0-e2**2)/(1.0 + e2*np.cos(f2))
+        v2_tilde = np.sqrt( CONST_G*(m1+m2+m3)/(a2*(1.0-e2**2) ) )
+        e2_vec_hat,j2_vec_hat = compute_e_and_j_hat_vectors(INCL2,AP2,LAN2)
+        q2_vec_hat = np.cross(j2_vec_hat,e2_vec_hat)
+        r2_vec = r2*( e2_vec_hat * np.cos(f2) + q2_vec_hat * np.sin(f2) )
+        v2_vec = v2_tilde*( -e2_vec_hat * np.sin(f2) + q2_vec_hat * (e2 + np.cos(f2) ) )
+    
+        Delta_r2_vec = (delta_m1/( (m1+m2) + delta_m1) ) * (m2/(m1+m2)) * r1_vec
+        Delta_v2_vec = (delta_m1/( (m1+m2) + delta_m1) ) * ( (m2/(m1+m2)) * v1_vec + V_k_vec*(1.0 + m1/delta_m1) )
+        r2_vec_p = r2_vec + Delta_r2_vec
+        r2p = np.sqrt(np.dot(r2_vec_p,r2_vec_p))
+
+
+        r2_dot_v2 = np.sum([x*y for x,y in zip(r2_vec,v2_vec)])
+        r2_dot_V_k = np.sum([x*y for x,y in zip(r2_vec,V_k_vec)])
+        v2c_sq = CONST_G*(m1+m2+m3)/a2
+        v2_dot_Delta_v2_vec = np.dot(v2_vec,Delta_v2_vec)
+        Delta_v2_vec_dot_Delta_v2_vec = np.dot(Delta_v2_vec,Delta_v2_vec)
+        
+        a1_p = a1*(1.0 + delta_m1/(m1+m2))*pow( 1.0 + 2.0*(a1/r1)*(delta_m1/(m1+m2)) - 2.0*v1_dot_V_k/v1c_sq - V_k_dot_V_k/v1c_sq, -1.0)
+        j1_p = pow( (m1+m2)/(m1+m2+delta_m1), 2.0)*(1.0 + 2.0*(a1/r1)*(delta_m1/(m1+m2)) - 2.0*v1_dot_V_k/v1c_sq - V_k_dot_V_k/v1c_sq)*( 1.0 - e1**2 \
+            + (1.0/(CONST_G*(m1+m2)*a1))*( r1**2*( 2.0*v1_dot_V_k + V_k_dot_V_k) - 2.0*r1_dot_v1*r1_dot_V_k - r1_dot_V_k**2) )
+        e1_p = np.sqrt(1.0 - j1_p)
+
+        a2_p = a2*(1.0 + delta_m1/(m1+m2+m3))*pow( 1.0 + 2.0*(a2/r2p)*(delta_m1/(m1+m2+m3)) - 2.0*v2_dot_Delta_v2_vec/v2c_sq - Delta_v2_vec_dot_Delta_v2_vec/v2c_sq + 2.0*a2*(r2-r2p)/(r2*r2p), -1.0)
+
+        alpha = (-delta_m1/(m1+m2+delta_m1)) * m2/(m1+m2)
+        j2_p = ((m1+m2+m3)/(m1+m2+m3+delta_m1))**2 * (1.0 + 2.0*(a2/r2p)*(delta_m1/(m1+m2+m3)) + 2.0*a2*(r2-r2p)/(r2*r2p) - 2.0*np.dot(v2_vec,Delta_v2_vec)/v2c_sq - Delta_v2_vec_dot_Delta_v2_vec/v2c_sq)*( (1.0-e2**2) + (1.0/(CONST_G*(m1+m2+m3)*a2))*( r2**2*(2.0*np.dot(v2_vec,Delta_v2_vec) + np.dot(Delta_v2_vec,Delta_v2_vec)) + (-2.0*alpha*np.dot(r1_vec,r2_vec) + alpha**2*r1**2)*np.dot(v2_vec + Delta_v2_vec,v2_vec+Delta_v2_vec) + 2.0*np.dot(r2_vec,v2_vec)*( alpha*np.dot(r1_vec,v2_vec) - np.dot(r2_vec,Delta_v2_vec) + alpha*np.dot(r1_vec,Delta_v2_vec)) - (-alpha*np.dot(r1_vec,v2_vec) + np.dot(r2_vec,Delta_v2_vec) - alpha*np.dot(r1_vec,Delta_v2_vec))**2 ) ) 
+        e2_p = np.sqrt(1.0 - j2_p)
+        
+        if args.verbose==True:
+            print( 'analytic results Toonen+16: ','new a1 = ',a1_p,'; new e1 = ',e1_p)
+            print( 'analytic results Toonen+16: ','new a2 = ',a2_p,'; new e2 = ',e2_p)
+        
+        N_r = 10
+        assert round(inner_binary.a,N_r) == round(a1_p,N_r)
+        assert round(inner_binary.e,N_r) == round(e1_p,N_r)
+
+        assert round(outer_binary.a,N_r) == round(a2_p,N_r)
+        assert round(outer_binary.e,N_r) == round(e2_p,N_r)
+
+        print("Test passed")
+
+        code.reset()
+        
+    def test13(self,args):
+        print("Test flybys module: numerically integrating over perturber's orbit")
+
+        code = SecularMultiple()
+        CONST_G = code.CONST_G
+        
+        ### binary orbit ###
+        a = 1.0
+        e = 0.1
+        m1 = 1.0
+        m2 = 0.8
+        M_per = 1.0
+        E = 2.0
+        Q = 100.0
+        INCL = 0.4*np.pi
+        AP = 0.25*np.pi
+        LAN = 0.25*np.pi
+
+        masses = [m1,m2]
+        m = m1 + m2
+        particles = Tools.create_nested_multiple(2,masses, [a], [e], [INCL], [AP], [LAN])
+
+        t_per = np.sqrt(CONST_G*(m+M_per)/(Q**3))
+
+        t = 0.0
+        t_ref = 1.0e4
+        tend = 4.0*t_ref
+        Nsteps = 1000
+        dt = tend/float(Nsteps)
+
+        external_particle = Particle(mass = M_per, is_binary=True, is_external=True, external_t_ref=t_ref, e=E, external_r_p = Q, INCL = 1.0e-10, AP = 1.0e-10, LAN = 1.0e-10)
+
+        particles.append(external_particle)
+
+        code = SecularMultiple()
+        code.add_particles(particles)
+        binary = code.particles[2]
+        
+        code.include_quadrupole_order_terms = True
+        code.include_octupole_order_binary_pair_terms = True
+        code.include_hexadecupole_order_binary_pair_terms = False
+        code.include_dotriacontupole_order_binary_pair_terms = False
+
+        t_print_array = []
+        a_print_array = []
+        e_print_array = []
+        INCL_print_array = []
+        AP_print_array = []
+        LAN_print_array = []
+        
+        while (t<tend):
+            t+=dt
+            code.evolve_model(t)
+             
+            t_print_array.append(t)
+            a_print_array.append(binary.a)
+            e_print_array.append(binary.e)
+            
+        Delta_e = binary.e - e
+            
+        ### compute analytic result (https://ui.adsabs.harvard.edu/abs/2019MNRAS.487.5630H/abstract) ###
+        e_vec_hat,j_vec_hat = compute_e_and_j_hat_vectors(INCL,AP,LAN)
+        e_vec = e_vec_hat*e
+        j_vec = j_vec_hat*np.sqrt(1.0-e**2)
+
+        ex = e_vec[0]
+        ey = e_vec[1]
+        ez = e_vec[2]
+        jx = j_vec[0]
+        jy = j_vec[1]
+        jz = j_vec[2]
+
+        eps_SA = (M_per/np.sqrt(m*(m+M_per)))*pow(a/Q,3.0/2.0)*pow(1.0 + E,-3.0/2.0)
+        eps_oct = (a/Q)*(m1-m2)/((1.0+E)*m)
+        Delta_e_an = (5*eps_SA*(np.sqrt(1 - E**(-2))*((1 + 2*E**2)*ey*ez*jx + (1 - 4*E**2)*ex*ez*jy + 2*(-1 + E**2)*ex*ey*jz) + 3*E*ez*(ey*jx - ex*jy)*np.arccos(-1.0/E)))/(2.*E*np.sqrt(ex**2 + ey**2 + ez**2))
+        
+        Delta_e_an += -(5*eps_oct*eps_SA*(np.sqrt(1 - E**(-2))*(ez*jy*(14*ey**2 + 6*jx**2 - 2*jy**2 + 8*E**4*(-1 + ey**2 + 8*ez**2 + 2*jx**2 + jy**2) + E**2*(-4 - 31*ey**2 + 32*ez**2 - 7*jx**2 + 9*jy**2)) - ey*(2*(7*ey**2 + jx**2 - jy**2) + 8*E**4*(-1 + ey**2 + 8*ez**2 + 4*jx**2 + jy**2) + E**2*(-4 - 31*ey**2 + 32*ez**2 + 11*jx**2 + 9*jy**2))*jz + ex**2*(-((14 + 45*E**2 + 160*E**4)*ez*jy) + 3*(14 - 27*E**2 + 16*E**4)*ey*jz) + 2*(-2 + 9*E**2 + 8*E**4)*ex*jx*(7*ey*ez + jy*jz)) + 3*E**3*(ez*jy*(-4 - 3*ey**2 + 32*ez**2 + 5*jx**2 + 5*jy**2) + ey*(4 + 3*ey**2 - 32*ez**2 - 15*jx**2 - 5*jy**2)*jz + ex**2*(-73*ez*jy + 3*ey*jz) + 10*ex*jx*(7*ey*ez + jy*jz))*np.arccos(-1.0/E)))/(32.*E**2*np.sqrt(ex**2 + ey**2 + ez**2))
+
+        if args.verbose==True:
+            print( 'Numerically integrated: Delta e = ',Delta_e,'; analytic expression: Delta e = ',Delta_e_an)
+
+        N_r = 6
+        assert round(Delta_e,N_r) == round(Delta_e_an,N_r)
+
+        print("Test passed")
+        
+        code.reset()
+        
+        if HAS_MATPLOTLIB == True and args.plot==True:
+            fig = pyplot.figure(figsize=(8,6))
+            plot1 = fig.add_subplot(1,1,1)
+            
+            t_print_array = np.array(t_print_array)
+            e_print_array = np.array(e_print_array)
+            
+            plot1.plot(t_print_array*1.0e-6,e_print_array, color='k')
+            
+            fontsize = 15
+            plot1.set_ylabel("$e$",fontsize=fontsize)
+            plot1.set_xlabel("$t/\mathrm{Myr}$",fontsize=fontsize)
+            
+            pyplot.show()
+    
+    def test14(self,args):
+        print("Test flybys module: using analytic formulae")
+
+        code = SecularMultiple()
+        CONST_G = code.CONST_G
+        
+        ### binary orbit ###
+        a = 1.0
+        e = 0.1
+        m1 = 1.0
+        m2 = 0.8
+        M_per = 1.0
+        E = 2.0
+        Q = 100.0
+        INCL = 0.4*np.pi
+        AP = 0.25*np.pi
+        LAN = 0.25*np.pi
+        
+        masses = [m1,m2]
+        m = m1 + m2
+        particles = Tools.create_nested_multiple(2,masses, [a], [e], [INCL], [AP], [LAN])
+        binary = particles[2]
+                
+        t_ref = 1.0e5 ### not actually used in this case, but needs to be specified for external particles
+
+        external_particle = Particle(mass = M_per, is_binary=True, is_external=True, external_t_ref=t_ref, e=E, external_r_p = Q, INCL = 1.0e-10, AP = 1.0e-10, LAN = 1.0e-10)
+
+        particles.append(external_particle)
+
+        code = SecularMultiple()
+        code.add_particles(particles)
+
+        code.include_quadrupole_order_terms = True
+        code.include_octupole_order_binary_pair_terms = True
+        code.include_hexadecupole_order_binary_pair_terms = False
+        code.include_dotriacontupole_order_binary_pair_terms = False
+        
+        code.apply_external_perturbation_assuming_integrated_orbits()
+        Delta_e = binary.e-e
+
+        ### compute analytic result (https://ui.adsabs.harvard.edu/abs/2019MNRAS.487.5630H/abstract) ###
+        e_vec_hat,j_vec_hat = compute_e_and_j_hat_vectors(INCL,AP,LAN)
+        e_vec = e_vec_hat*e
+        j_vec = j_vec_hat*np.sqrt(1.0-e**2)
+        ex = e_vec[0]
+        ey = e_vec[1]
+        ez = e_vec[2]
+        jx = j_vec[0]
+        jy = j_vec[1]
+        jz = j_vec[2]
+
+        eps_SA = (M_per/np.sqrt(m*(m+M_per)))*pow(a/Q,3.0/2.0)*pow(1.0 + E,-3.0/2.0)
+        eps_oct = (a/Q)*(m1-m2)/((1.0+E)*m)
+        Delta_e_an = (5*eps_SA*(np.sqrt(1 - E**(-2))*((1 + 2*E**2)*ey*ez*jx + (1 - 4*E**2)*ex*ez*jy + 2*(-1 + E**2)*ex*ey*jz) + 3*E*ez*(ey*jx - ex*jy)*np.arccos(-1.0/E)))/(2.*E*np.sqrt(ex**2 + ey**2 + ez**2))
+        
+        Delta_e_an += -(5*eps_oct*eps_SA*(np.sqrt(1 - E**(-2))*(ez*jy*(14*ey**2 + 6*jx**2 - 2*jy**2 + 8*E**4*(-1 + ey**2 + 8*ez**2 + 2*jx**2 + jy**2) + E**2*(-4 - 31*ey**2 + 32*ez**2 - 7*jx**2 + 9*jy**2)) - ey*(2*(7*ey**2 + jx**2 - jy**2) + 8*E**4*(-1 + ey**2 + 8*ez**2 + 4*jx**2 + jy**2) + E**2*(-4 - 31*ey**2 + 32*ez**2 + 11*jx**2 + 9*jy**2))*jz + ex**2*(-((14 + 45*E**2 + 160*E**4)*ez*jy) + 3*(14 - 27*E**2 + 16*E**4)*ey*jz) + 2*(-2 + 9*E**2 + 8*E**4)*ex*jx*(7*ey*ez + jy*jz)) + 3*E**3*(ez*jy*(-4 - 3*ey**2 + 32*ez**2 + 5*jx**2 + 5*jy**2) + ey*(4 + 3*ey**2 - 32*ez**2 - 15*jx**2 - 5*jy**2)*jz + ex**2*(-73*ez*jy + 3*ey*jz) + 10*ex*jx*(7*ey*ez + jy*jz))*np.arccos(-1.0/E)))/(32.*E**2*np.sqrt(ex**2 + ey**2 + ez**2))
+
+        if args.verbose==True:
+            print( 'SecularMultiple Delta e = ',Delta_e,'; analytic expression: Delta e = ',Delta_e_an)
+
+        N_r = 8
+        assert round(Delta_e,N_r) == round(Delta_e_an,N_r)
+
+        print("Test passed")
+
+        code.reset()
+        
+def compute_e_and_j_hat_vectors(INCL,AP,LAN):
+    sin_INCL = np.sin(INCL)
+    cos_INCL = np.cos(INCL)
+    sin_AP = np.sin(AP)
+    cos_AP = np.cos(AP)
+    sin_LAN = np.sin(LAN)
+    cos_LAN = np.cos(LAN)
+    
+    e_hat_vec_x = (cos_LAN*cos_AP - sin_LAN*sin_AP*cos_INCL);
+    e_hat_vec_y = (sin_LAN*cos_AP + cos_LAN*sin_AP*cos_INCL);
+    e_hat_vec_z = (sin_AP*sin_INCL);
+    
+    j_hat_vec_x = sin_LAN*sin_INCL;
+    j_hat_vec_y = -cos_LAN*sin_INCL;
+    j_hat_vec_z = cos_INCL;
+
+    e_hat_vec = np.array([e_hat_vec_x,e_hat_vec_y,e_hat_vec_z])
+    j_hat_vec = np.array([j_hat_vec_x,j_hat_vec_y,j_hat_vec_z])
+
+    return e_hat_vec,j_hat_vec
     
 if __name__ == '__main__':
     args = parse_arguments()
     
-    N_tests = 10
+    N_tests = 14
     if args.test==0:
         tests = range(1,N_tests+1)
     else:
@@ -994,6 +1385,9 @@ if __name__ == '__main__':
 
     t=test_secularmultiple()
     for i in tests:
-        print( 'Running test number',i,'; verbose =',args.verbose,'plot =',args.plot)
+        print( 'Running test number',i,'; verbose =',args.verbose,'; plot =',args.plot)
         function = getattr(t, 'test%s'%i)
         function(args)
+    
+    print("="*50)
+    print("All tests passed!")

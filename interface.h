@@ -140,29 +140,4 @@ int set_parameters(double relative_tolerance_, double absolute_tolerance_eccentr
     bool include_quadrupole_order_terms_, bool include_octupole_order_binary_pair_terms_, bool include_octupole_order_binary_triplet_terms_,
     bool include_hexadecupole_order_binary_pair_terms_, bool include_dotriacontupole_order_binary_pair_terms_, bool include_double_averaging_corrections_);
 
-
-int get_relative_tolerance(double *value);
-int set_relative_tolerance(double value);
-
-int get_absolute_tolerance_eccentricity_vectors(double *value);
-int set_absolute_tolerance_eccentricity_vectors(double value);
-
-int get_include_quadrupole_order_terms(int *value);
-int set_include_quadrupole_order_terms(int value);
-
-int get_include_octupole_order_binary_pair_terms(int *value);
-int set_include_octupole_order_binary_pair_terms(int value);
-
-int get_include_octupole_order_binary_triplet_terms(int *value);
-int set_include_octupole_order_binary_triplet_terms(int value);
-
-int get_include_hexadecupole_order_binary_pair_terms(int *value);
-int set_include_hexadecupole_order_binary_pair_terms(int value);
-
-int get_include_dotriacontupole_order_binary_pair_terms(int *value);
-int set_include_dotriacontupole_order_binary_pair_terms(int value);
-
-int get_orbital_phases_random_seed(int *value);
-int set_orbital_phases_random_seed(int value);
-
 }

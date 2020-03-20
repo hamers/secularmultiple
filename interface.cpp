@@ -307,7 +307,7 @@ int get_stellar_type(int index, int *value)
  * instantaneous perturbations *
  * ****************************/
 
-int set_instantaneous_perturbation_properties(int index, double delta_mass, double delta_x, double delta_y, double delta_z, double delta_vx, double delta_vy, double delta_vz)
+int set_instantaneous_perturbation_properties(int index, double delta_mass, double delta_X, double delta_Y, double delta_Z, double delta_VX, double delta_VY, double delta_VZ)
 {
     if (index > highest_particle_index)
     {
@@ -317,12 +317,12 @@ int set_instantaneous_perturbation_properties(int index, double delta_mass, doub
     Particle *p = particlesMap[index];
 
     p->instantaneous_perturbation_delta_mass = delta_mass;
-    p->instantaneous_perturbation_delta_x = delta_x;
-    p->instantaneous_perturbation_delta_y = delta_y;
-    p->instantaneous_perturbation_delta_z = delta_z;
-    p->instantaneous_perturbation_delta_vx = delta_vx;
-    p->instantaneous_perturbation_delta_vy = delta_vy;
-    p->instantaneous_perturbation_delta_vz = delta_vz;
+    p->instantaneous_perturbation_delta_X = delta_X;
+    p->instantaneous_perturbation_delta_Y = delta_Y;
+    p->instantaneous_perturbation_delta_Z = delta_Z;
+    p->instantaneous_perturbation_delta_VX = delta_VX;
+    p->instantaneous_perturbation_delta_VY = delta_VY;
+    p->instantaneous_perturbation_delta_VZ = delta_VZ;
     
     return 0;
 }
@@ -341,11 +341,6 @@ int set_external_particle_properties(int index, double external_t_ref, double e,
 
     Particle *p = particlesMap[index];    
     
-    /* determine masses in all binaries */
-//    int N_bodies, N_binaries, N_root_finding;
-//    determine_binary_parents_and_levels(&particlesMap, &N_bodies, &N_binaries, &N_root_finding);
-//    set_binary_masses_from_body_masses(&particlesMap);
-
     p->external_t_ref = external_t_ref;
     p->external_e = e;
     p->external_r_p = external_r_p;
@@ -354,12 +349,10 @@ int set_external_particle_properties(int index, double external_t_ref, double e,
     compute_orbital_vectors_from_orbital_elements_unit(INCL,AP,LAN,&(p->e_vec[0]), &(p->e_vec[1]), &(p->e_vec[2]), &(p->h_vec[0]), &(p->h_vec[1]), &(p->h_vec[2]) ); 
     
     //printf("set_external_particle_properties inputs %g %g %g %g %g\n",external_t_ref, e, external_r_p, INCL, AP, LAN);
-    //printf("set_external_particle_properties OE %g %g %g %g %g %g\n",p->e_vec_x,p->e_vec_y,p->e_vec_z,p->h_vec_x,p->h_vec_y,p->h_vec_z);
+    //printf("set_external_particle_properties OE %g %g %g %g %g %g\n",p->e_vec[0],p->e_vec[1],p->e_vec[2],p->h_vec[0],p->h_vec[1],p->h_vec[2]);
     
     return 0;
 }
-
-
 
 
 /****************
@@ -377,7 +370,7 @@ int set_spin_vector(int index, double spin_vec_x, double spin_vec_y, double spin
     p->spin_vec[0] = spin_vec_x;
     p->spin_vec[1] = spin_vec_y;
     p->spin_vec[2] = spin_vec_z;
-    //printf("set spin %g %g %g\n",spin_vec_x,spin_vec_y,spin_vec_z);
+
     return 0;
 }
 int get_spin_vector(int index, double *spin_vec_x, double *spin_vec_y, double *spin_vec_z)
@@ -424,45 +417,6 @@ int get_spin_vector_dot(int index, double *spin_vec_x_dot, double *spin_vec_y_do
     return 0;
 }
 
-#ifdef IGNORE
-int set_orbital_vectors_dot(int index, double e_vec_x_dot, double e_vec_y_dot, double e_vec_z_dot, \
-    double h_vec_x_dot, double h_vec_y_dot, double h_vec_z_dot)
-{
-    if (index > highest_particle_index)
-    {
-      return -1;
-    }
-  
-    Particle * p = particlesMap[index];
-    p->e_vec_x_dot = e_vec_x_dot;
-    p->e_vec_y_dot = e_vec_y_dot;
-    p->e_vec_z_dot = e_vec_z_dot;
-    p->h_vec_x_dot = h_vec_x_dot;
-    p->h_vec_y_dot = h_vec_y_dot;
-    p->h_vec_z_dot = h_vec_z_dot;
-    
-    return 0;
-}
-int get_orbital_vectors_dot(int index, double *e_vec_x_dot, double *e_vec_y_dot, double *e_vec_z_dot, \
-    double *h_vec_x_dot, double *h_vec_y_dot, double *h_vec_z_dot)
-{
-    if (index > highest_particle_index)
-    {
-      return -1;
-    }
-  
-    Particle * p = particlesMap[index];
-    *e_vec_x_dot = p->e_vec_x_dot;
-    *e_vec_y_dot = p->e_vec_y_dot;
-    *e_vec_z_dot = p->e_vec_z_dot;
-    *h_vec_x_dot = p->h_vec_x_dot;
-    *h_vec_y_dot = p->h_vec_y_dot;
-    *h_vec_z_dot = p->h_vec_z_dot;
-    
-    return 0;
-}
-#endif
-
 int get_relative_position_and_velocity(int index, double *x, double *y, double *z, double *vx, double *vy, double *vz)
 {
     if (index > highest_particle_index)
@@ -488,80 +442,16 @@ int get_absolute_position_and_velocity(int index, double *X, double *Y, double *
     }
   
     Particle * p = particlesMap[index];
-    *X = p->x;
-    *Y = p->y;
-    *Z = p->z;
-    *VX = p->vx;
-    *VY = p->vy;
-    *VZ = p->vz;
+    *X = p->X;
+    *Y = p->Y;
+    *Z = p->Z;
+    *VX = p->VX;
+    *VY = p->VY;
+    *VZ = p->VZ;
    
     return 0;
 }
 
-#ifdef IGNORE
-int set_position_vector(int index, double x, double y, double z)
-{
-    if (index > highest_particle_index)
-    {
-      return -1;
-    }
-  
-    Particle * p = particlesMap[index];
-    p->x = x;
-    p->x = y;
-    p->x = z;
-   
-    return 0;
-}
-int get_position_vector(int index, double *x, double *y, double *z)
-{
-    //printf("get_position_vector\n");
-    if (index > highest_particle_index)
-    {
-      return -1;
-    }
-  
-    set_positions_and_velocities(&particlesMap);
-    
-    Particle * p = particlesMap[index];
-    *x = p->x;
-    *y = p->x;
-    *z = p->x;
-    
-    return 0;
-}
-
-int set_velocity_vector(int index, double x, double y, double z)
-{
-    if (index > highest_particle_index)
-    {
-      return -1;
-    }
-  
-    Particle * p = particlesMap[index];
-    p->vx = x;
-    p->vy = y;
-    p->vz = z;
-   
-    return 0;
-}
-int get_velocity_vector(int index, double *x, double *y, double *z)
-{
-    if (index > highest_particle_index)
-    {
-      return -1;
-    }
-
-    set_positions_and_velocities(&particlesMap);
-    
-    Particle * p = particlesMap[index];
-    *x = p->vx;
-    *y = p->vy;
-    *z = p->vz;
-    
-    return 0;
-}
-#endif
 
 /************
 /* PN terms *
@@ -894,82 +784,6 @@ int set_parameters(double relative_tolerance_, double absolute_tolerance_eccentr
     include_double_averaging_corrections = include_double_averaging_corrections_;
     //printf("PARAMS %g %g %d %d %d %d %d\n",relative_tolerance,absolute_tolerance_eccentricity_vectors,include_quadrupole_order_terms,include_octupole_order_binary_pair_terms,include_octupole_order_binary_triplet_terms,include_hexadecupole_order_binary_pair_terms,include_dotriacontupole_order_binary_pair_terms);
     
-    return 0;
-}
-int get_relative_tolerance(double *value)
-{
-    *value = relative_tolerance;
-    return 0;
-}
-int set_relative_tolerance(double value)
-{
-    relative_tolerance = value;
-    return 0;
-}
-int get_absolute_tolerance_eccentricity_vectors(double *value)
-{
-    *value = absolute_tolerance_eccentricity_vectors;
-    return 0;
-}
-int set_absolute_tolerance_eccentricity_vectors(double value)
-{
-    absolute_tolerance_eccentricity_vectors = value;
-    return 0;
-}
-
-int get_include_quadrupole_order_terms(int *value){
-    *value = include_quadrupole_order_terms ? 1 : 0;
-    return 0;
-}
-int set_include_quadrupole_order_terms(int value){
-    include_quadrupole_order_terms = value == 1;
-    return 0;
-}
-
-int get_include_octupole_order_binary_pair_terms(int *value){
-    *value = include_octupole_order_binary_pair_terms ? 1 : 0;
-    return 0;
-}
-int set_include_octupole_order_binary_pair_terms(int value){
-    include_octupole_order_binary_pair_terms = value == 1;
-    return 0;
-}
-
-int get_include_octupole_order_binary_triplet_terms(int *value){
-    *value = include_octupole_order_binary_triplet_terms ? 1 : 0;
-    return 0;
-}
-int set_include_octupole_order_binary_triplet_terms(int value){
-    include_octupole_order_binary_triplet_terms = value == 1;
-    return 0;
-}
-
-int get_include_hexadecupole_order_binary_pair_terms(int *value){
-    *value = include_hexadecupole_order_binary_pair_terms ? 1 : 0;
-    return 0;
-}
-int set_include_hexadecupole_order_binary_pair_terms(int value){
-    include_hexadecupole_order_binary_pair_terms = value == 1;
-    return 0;
-}
-
-int get_include_dotriacontupole_order_binary_pair_terms(int *value){
-    *value = include_dotriacontupole_order_binary_pair_terms ? 1 : 0;
-    return 0;
-}
-int set_include_dotriacontupole_order_binary_pair_terms(int value){
-    include_dotriacontupole_order_binary_pair_terms = value == 1;
-    return 0;
-}
-
-int get_orbital_phases_random_seed(int *value)
-{
-    *value = orbital_phases_random_seed;
-    return 0;
-}
-int set_orbital_phases_random_seed(int value)
-{
-    orbital_phases_random_seed = value;
     return 0;
 }
 

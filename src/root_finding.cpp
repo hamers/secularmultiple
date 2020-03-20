@@ -46,16 +46,6 @@ int root_finding_functions(realtype time, N_Vector y, realtype *root_functions, 
                 double KS_V=0.0;
                 compute_EOM_Newtonian_for_particle(particlesMap,P_p,&hamiltonian,&KS_V,false);
                 
-                #ifdef IGNORE
-                for (it_parent = P_p->parents.begin(); it_parent != P_p->parents.end(); it_parent++)
-                {
-                    int i = std::distance(P_p->parents.begin(), it_parent);
-                    Particle *P_q = (*particlesMap)[(*it_parent)];
-                    int connecting_child_in_parent = P_p->connecting_child_in_parents[i];
-                    compute_EOM_binary_pairs(particlesMap,P_p->index,P_q->index,connecting_child_in_parent,&hamiltonian,&KS_V,false);
-                }
-                #endif
-
                 double AM_time_scale = compute_AM_time_scale(P_p);
                 double orbital_period = compute_orbital_period(P_p);
                 root_functions[i_root] = 1.0 - AM_time_scale/orbital_period;

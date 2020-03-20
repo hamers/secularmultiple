@@ -7,16 +7,6 @@
 extern "C"
 {
 
-
-
-
-/* constants */
-/* units (cf. interface.py): 
- * unit_l = units.AU
- * unit_m = units.MSun
- * unit_t = 1.0e6*units.yr
- */
- 
 #ifndef __FOUND_ROOT
 #define ___FOUND_ROOT
 #define FOUND_ROOT ((roots_found[i_root] == 1) || (roots_found[i_root] == -1))
@@ -50,16 +40,6 @@ extern bool include_dotriacontupole_order_binary_pair_terms;
 extern bool include_double_averaging_corrections;
 extern int orbital_phases_random_seed;
 extern double epsilon;
-
-#ifdef IGNORE
-#define CONST_C_LIGHT		(double)	63239726386.8
-#define CONST_C_LIGHT_P2	(double)	CONST_C_LIGHT*CONST_C_LIGHT
-#define CONST_C_LIGHT_P4	(double)	CONST_C_LIGHT_P2*CONST_C_LIGHT_P2
-#define CONST_C_LIGHT_P5	(double)	CONST_C_LIGHT_P4*CONST_C_LIGHT
-#define CONST_MSUN          (double)    1.0
-#define CONST_R_SUN         (double)    0.00464913034382
-#define CONST_L_SUN         (double)    2.71040410975e+14
-#endif
 
 #define c_1div2             (double)    1.0/2.0
 #define c_1div3             (double)    1.0/3.0
@@ -559,13 +539,12 @@ class Particle
      * ****************/
     /* general */
     double radius,radius_dot,radius_ddot;
-    //double spin_vec_x,spin_vec_y,spin_vec_z;
     double spin_vec_x_dot,spin_vec_y_dot,spin_vec_z_dot;
     int stellar_type;
     
     /* Absolute position/velocities (relative to an arbitrary inertial reference frame) */
-    double x,y,z; /* TO DO: rename; use capital letters for absolute quantities */
-    double vx,vy,vz;
+    double X,Y,Z;
+    double VX,VY,VZ;
 
     /* used in ODE solver only */
     double spin_vec[3],dspin_vec_dt[3]; 
@@ -637,13 +616,11 @@ class Particle
     double j,j_p2,j_p3,j_p4,j_p5; // j=sqrt(1-e^2)
     double h,a;
     
-//    Particle(int index, int is_binary, int child1, int child2, double mass, double radius, double spin_vec_x, double spin_vec_y, double spin_vec_z, double e_vec_x, double e_vec_y, double e_vec_z, double h_vec_x, double h_vec_y, double h_vec_z, int include_pairwise_1PN_terms, int include_pairwise_25PN_terms, int include_tides_terms, double tides_Q_prime, double tides_gyration_radius, int check_for_secular_breakdown, int secular_breakdown_has_occurred, int check_for_dynamical_instability, int dynamical_instability_has_occurred, int dynamical_instability_criterion, int check_for_physical_collision, int physical_collision_has_occurred) : index(index), is_binary(is_binary), child1(child1), child2(child2), mass(mass), radius(radius), spin_vec_x(spin_vec_x), spin_vec_y(spin_vec_y), spin_vec_z(spin_vec_z), e_vec_x(e_vec_x), e_vec_y(e_vec_y), e_vec_z(e_vec_z), h_vec_x(h_vec_x), h_vec_y(h_vec_y), h_vec_z(h_vec_z), include_pairwise_1PN_terms(include_pairwise_1PN_terms), include_pairwise_25PN_terms(include_pairwise_25PN_terms), include_tides_terms(include_tides_terms), tides_Q_prime(tides_Q_prime), tides_gyration_radius(tides_gyration_radius), 
-
     /* user-specified instantaneous perturbations */
     bool sample_orbital_phase_randomly;
     double instantaneous_perturbation_delta_mass;
-    double instantaneous_perturbation_delta_x,instantaneous_perturbation_delta_y,instantaneous_perturbation_delta_z;
-    double instantaneous_perturbation_delta_vx,instantaneous_perturbation_delta_vy,instantaneous_perturbation_delta_vz;
+    double instantaneous_perturbation_delta_X,instantaneous_perturbation_delta_Y,instantaneous_perturbation_delta_Z;
+    double instantaneous_perturbation_delta_VX,instantaneous_perturbation_delta_VY,instantaneous_perturbation_delta_VZ;
 
     bool is_external;
     double external_t_ref,external_e,external_r_p;
@@ -669,8 +646,6 @@ class Particle
     double VRR_eta_20_init,VRR_eta_a_22_init,VRR_eta_b_22_init,VRR_eta_a_21_init,VRR_eta_b_21_init;
     double VRR_eta_20_final,VRR_eta_a_22_final,VRR_eta_b_22_final,VRR_eta_a_21_final,VRR_eta_b_21_final;
     
-
-
     Particle(int index, bool is_binary) : index(index), is_binary(is_binary)
     {
         /* default values */
@@ -709,16 +684,9 @@ class Particle
         
         sample_orbital_phase_randomly = 0; /* 0: not sampled randomly */
         instantaneous_perturbation_delta_mass = 0.0;
-        instantaneous_perturbation_delta_x = instantaneous_perturbation_delta_y = instantaneous_perturbation_delta_z = 0.0;
-        instantaneous_perturbation_delta_vx = instantaneous_perturbation_delta_vy = instantaneous_perturbation_delta_vz = 0.0;
+        instantaneous_perturbation_delta_X = instantaneous_perturbation_delta_Y = instantaneous_perturbation_delta_Z = 0.0;
+        instantaneous_perturbation_delta_VX = instantaneous_perturbation_delta_VY = instantaneous_perturbation_delta_VZ = 0.0;
         
-        //spin_vec_x = 0.0;
-        //spin_vec_y = 0.0;
-        //spin_vec_z = 0.0;
-        
-        //e_vec_x_dot = e_vec_y_dot = e_vec_z_dot = 0.0;
-        //h_vec_x_dot = h_vec_y_dot = h_vec_z_dot = 0.0;
-     
         is_external = false;
         external_t_ref = 0.0;
         external_r_p = 1.0;

@@ -415,9 +415,4 @@ void update_orbital_vectors_in_binaries_from_positions_and_velocities(ParticlesM
     }
 }
 
-
-
-
-
-
 }

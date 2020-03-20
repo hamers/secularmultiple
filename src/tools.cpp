@@ -478,42 +478,21 @@ void from_cartesian_to_orbital_vectors(double child1_mass, double child2_mass, d
 
 void get_position_and_velocity_vectors_from_particle(Particle *p, double r[3], double v[3])
 {
-    r[0] = p->x;
-    r[1] = p->y;
-    r[2] = p->z;
-    v[0] = p->vx;
-    v[1] = p->vy;
-    v[2] = p->vz;
+    r[0] = p->X;
+    r[1] = p->Y;
+    r[2] = p->Z;
+    v[0] = p->VX;
+    v[1] = p->VY;
+    v[2] = p->VZ;
 }
 void set_position_and_velocity_vectors_in_particle(Particle *p,  double r[3], double v[3])
 {
-    p->x = r[0];
-    p->y = r[1];
-    p->z = r[2];
-    p->vx = v[0];
-    p->vy = v[1];
-    p->vz = v[2];
+    p->X = r[0];
+    p->Y = r[1];
+    p->Z = r[2];
+    p->VX = v[0];
+    p->VY = v[1];
+    p->VZ = v[2];
 }
-#ifdef IGNORE
-void get_e_and_h_vectors_from_particle(Particle *p, double e_vec[3], double h_vec[3])
-{
-    e_vec[0] = p->e_vec_x;
-    e_vec[1] = p->e_vec_y;
-    e_vec[2] = p->e_vec_z;
-    h_vec[0] = p->h_vec_x;    
-    h_vec[1] = p->h_vec_y;    
-    h_vec[2] = p->h_vec_z;    
-}
-void set_e_and_h_vectors_in_particle(Particle *p, double e_vec[3], double h_vec[3])
-{
-    p->e_vec_x = e_vec[0];
-    p->e_vec_y = e_vec[1];
-    p->e_vec_z = e_vec[2];
-    p->h_vec_x = h_vec[0];
-    p->h_vec_y = h_vec[1];
-    p->h_vec_z = h_vec[2];
-}
-#endif
-
 
 }
