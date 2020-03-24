@@ -244,7 +244,7 @@ void compute_EOM_binary_pairs_external_perturbation(ParticlesMap *particlesMap, 
             }
             else
             {
-                printf("newtonian.cpp -- FATAL ERROR in constructing B-function \n");
+                printf("external.cpp -- FATAL ERROR in constructing B-function \n");
                 exit(-1);
             }
             
