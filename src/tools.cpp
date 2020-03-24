@@ -283,10 +283,10 @@ void compute_eccentric_anomaly_from_mean_anomaly(double mean_anomaly, double ecc
 {
     double eccentric_anomaly;
     double eccentric_anomaly_next = mean_anomaly;
-    double epsilon = 1e-10;
-    double error = 2.0*epsilon;
+    double epsilon2 = 1e-10;
+    double error = 2.0*epsilon2;
     int j = 0;
-    while (error > epsilon || j < 15)
+    while (error > epsilon2 || j < 15)
     {
         j += 1;
         eccentric_anomaly = eccentric_anomaly_next;
@@ -429,7 +429,7 @@ void from_orbital_vectors_to_cartesian(double child1_mass, double child2_mass, d
         v[i] = v_norm*( -sin_f*e_vec_unit[i] + (e + cos_f)*q_vec_unit[i] );
             
         #ifdef DEBUG
-        printf("tools.cpp -- from_cartesian_to_orbital_vectors -- i %d r[i] %g v[i] %g\n",i,r[i],v[i]);
+        printf("tools.cpp -- from_orbital_vectors_to_cartesian -- i %d r[i] %g v[i] %g\n",i,r[i],v[i]);
         #endif
     }
 }

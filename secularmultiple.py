@@ -327,7 +327,7 @@ class SecularMultiple(object):
             particle.minimum_periapse_distance_has_occurred = minimum_periapse_distance_has_occurred.value
             particle.RLOF_at_pericentre_has_occurred = RLOF_at_pericentre_has_occurred.value
             particle.GW_condition_has_occurred = GW_condition_has_occurred.value
-            
+
         if particle.is_binary==True:
             a,e,TA,INCL,AP,LAN = ctypes.c_double(0.0),ctypes.c_double(0.0),ctypes.c_double(0.0),ctypes.c_double(0.0),ctypes.c_double(0.0),ctypes.c_double(0.0)
             flag += self.lib.get_orbital_elements(particle.index,ctypes.byref(a),ctypes.byref(e),ctypes.byref(TA),ctypes.byref(INCL),ctypes.byref(AP),ctypes.byref(LAN))

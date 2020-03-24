@@ -306,24 +306,13 @@ void compute_EOM_binary_pairs_single_averaged(ParticlesMap *particlesMap, int in
     double B_n_m_i1_i2 = 0.0;
     double dB_n_m_i1_i2_de = 0.0; /* derivative of B-function w.r.t. e */
     
-
-    double e_p_array_even[HIGHEST_POWER_ECCP2_IN_B_TABLE];
-    double e_p_array_odd[HIGHEST_POWER_ECCP2_IN_B_TABLE];
-    e_p_array_even[0] = 1.0;
-    e_p_array_odd[1] = e;
     int index_B_eccp2;
+    double e_Peven,e_Podd; // e to a power which is even or odd
+    double e_P3 = e * e_P2;
+    double e_P4 = e * e_P3;
+    double e_P5 = e * e_P4;
+    double e_P6 = e * e_P5;
 
-    for (index_B_eccp2=1; index_B_eccp2<= HIGHEST_POWER_ECCP2_IN_B_TABLE; index_B_eccp2++)
-    {
-
-        e_p_array_even[index_B_eccp2] = e_p_array_even[index_B_eccp2-1]*e_P2;
-        
-        if (index_B_eccp2>1)
-        {
-            e_p_array_odd[index_B_eccp2] = e_p_array_odd[index_B_eccp2-1]*e_P2;
-        }
-    }
-    
     double C_r_k_n,C_r_k_n2,C_H_n;
     
     double grad_e_vec_H[3],grad_j_vec_H[3];
@@ -386,12 +375,36 @@ void compute_EOM_binary_pairs_single_averaged(ParticlesMap *particlesMap, int in
         {
             B_lookup = B_TABLE[index_B][4+index_B_eccp2]; /* take into account offset for n,m,i1,i2 */
 
-            B_n_m_i1_i2 += B_lookup*e_p_array_even[index_B_eccp2];
-            if (index_B_eccp2>0)
+            if (index_B_eccp2 == 0)
             {
-                dB_n_m_i1_i2_de += 2.0*index_B_eccp2*B_lookup*e_p_array_odd[index_B_eccp2];
+                e_Peven = 1.0;
+                e_Podd = 0.0;
             }
+            else if (index_B_eccp2 == 1)
+            {
+                e_Peven = e_P2;
+                e_Podd = e;
+            }
+            else if (index_B_eccp2 == 2)
+            {
+                e_Peven = e_P4;
+                e_Podd = e_P3;
+            }
+            else if (index_B_eccp2 == 3)
+            {
+                e_Peven = e_P6;
+                e_Podd = e_P5;
+            }
+            else
+            {
+                printf("newtonian.cpp -- FATAL ERROR in constructing B-function \n");
+                exit(-1);
+            }
+            
+            B_n_m_i1_i2 += B_lookup * e_Peven;
+            dB_n_m_i1_i2_de += 2.0* ( (double) index_B_eccp2) * B_lookup * e_Podd;
         }
+
         #ifdef DEBUG
         printf("newtonian.cpp -- compute_EOM_binary_pairs_single_averaged -- n %g m %g i1 %g i2 %g A_n_m %g e %g B %g dB/de %g\n",n,m,i1,i2,A_n_m,e,B_n_m_i1_i2,dB_n_m_i1_i2_de);
         #endif

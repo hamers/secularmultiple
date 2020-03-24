@@ -1,10 +1,8 @@
 /*
 */
 
-//#include "types.h"
 #include "structure.h"
 #include "evolve.h"
-//#include "structure.h"
 #include <stdio.h>
 
 extern "C"
@@ -233,8 +231,6 @@ void set_positions_and_velocities(ParticlesMap *particlesMap) /* TO DO: add to n
 
     double true_anomaly;
 
-    int seed = orbital_phases_random_seed;
-
     int index = 0;
     int i;
     
@@ -261,14 +257,14 @@ void set_positions_and_velocities(ParticlesMap *particlesMap) /* TO DO: add to n
                 child2_mass = child2->mass;
                 parent_mass = parent->mass;
                 
-                if (parent->sample_orbital_phase_randomly == 0)
+                if (parent->sample_orbital_phase_randomly == false)
                 {
                     true_anomaly = parent->true_anomaly;
                 }
                 else
                 {
                     e = norm3(parent->e_vec);
-                    true_anomaly = sample_random_true_anomaly(e);//,seed+index);
+                    true_anomaly = sample_random_true_anomaly(e);
                     //printf("parent->sample_orbital_phases_randomly  %d %g \n",parent->sample_orbital_phases_randomly,true_anomaly);
                 }
                 

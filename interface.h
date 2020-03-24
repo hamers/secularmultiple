@@ -38,7 +38,7 @@ int get_sample_orbital_phases_randomly(int index, int *value);
  * instantaneous perturbations *
  * ****************************/
 
-int set_instantaneous_perturbation_properties(int index, double delta_mass, double delta_x, double delta_y, double delta_z, double delta_vx, double delta_vy, double delta_vz);
+int set_instantaneous_perturbation_properties(int index, double delta_mass, double delta_X, double delta_Y, double delta_Z, double delta_VX, double delta_VY, double delta_VZ);
 
 
 /************

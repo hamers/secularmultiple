@@ -27,7 +27,7 @@ int compute_y_dot(realtype time, N_Vector y, N_Vector y_dot, void *data_)
 
     double hamiltonian = 0.0;
     double KS_V = 0.0;
-    ParticlesMapIterator it_p; //,it_f;
+    ParticlesMapIterator it_p;
     std::vector<int>::iterator it_parent_p,it_parent_q;
     
     for (it_p = particlesMap->begin(); it_p != particlesMap->end(); it_p++)
@@ -61,29 +61,29 @@ int compute_y_dot(realtype time, N_Vector y, N_Vector y_dot, void *data_)
             }
             
             /* tidal friction (ad hoc) */
-            Particle *P_child1 = (*particlesMap)[p->child1];
-            Particle *P_child2 = (*particlesMap)[p->child2];
+            Particle *child1 = (*particlesMap)[p->child1];
+            Particle *child2 = (*particlesMap)[p->child2];
 
-            if (P_child1->include_tidal_friction_terms == true || P_child1->include_tidal_bulges_precession_terms == true || P_child1->include_rotation_precession_terms == true)
+            if (child1->include_tidal_friction_terms == 1 || child1->include_tidal_bulges_precession_terms == 1 || child1->include_rotation_precession_terms == 1)
             {
-                if (P_child1->tides_method == 0 || P_child1->tides_method == 1)
+                if (child1->tides_method == 0 || child1->tides_method == 1)
                 {
-                    compute_EOM_equilibrium_tide_BO_full(particlesMap,p->index,P_child1->index,P_child2->index,P_child1->include_tidal_friction_terms,P_child1->include_tidal_bulges_precession_terms,P_child1->include_rotation_precession_terms,P_child1->minimum_eccentricity_for_tidal_precession,P_child1->tides_method);
+                    compute_EOM_equilibrium_tide_BO_full(particlesMap,p->index,child1->index,child2->index,child1->include_tidal_friction_terms,child1->include_tidal_bulges_precession_terms,child1->include_rotation_precession_terms,child1->minimum_eccentricity_for_tidal_precession,child1->tides_method);
                 }
-                else if (P_child1->tides_method == 2)
+                else if (child1->tides_method == 2)
                 {
-                    compute_EOM_equilibrium_tide(particlesMap,p->index,P_child1->index,P_child2->index,P_child1->include_tidal_friction_terms,P_child1->include_tidal_bulges_precession_terms,P_child1->include_rotation_precession_terms,P_child1->minimum_eccentricity_for_tidal_precession);
+                    compute_EOM_equilibrium_tide(particlesMap,p->index,child1->index,child2->index,child1->include_tidal_friction_terms,child1->include_tidal_bulges_precession_terms,child1->include_rotation_precession_terms,child1->minimum_eccentricity_for_tidal_precession);
                 }
             }
-            if (P_child2->include_tidal_friction_terms == true || P_child2->include_tidal_bulges_precession_terms == true || P_child2->include_rotation_precession_terms == true)
+            if (child2->include_tidal_friction_terms == 1 || child2->include_tidal_bulges_precession_terms == 1 || child2->include_rotation_precession_terms == 1)
             {
-                if (P_child2->tides_method == 0 || P_child2->tides_method == 1)
+                if (child2->tides_method == 0 || child2->tides_method == 1)
                 {
-                    compute_EOM_equilibrium_tide_BO_full(particlesMap,p->index,P_child2->index,P_child1->index,P_child2->include_tidal_friction_terms,P_child2->include_tidal_bulges_precession_terms,P_child2->include_rotation_precession_terms,P_child2->minimum_eccentricity_for_tidal_precession,P_child2->tides_method);
+                    compute_EOM_equilibrium_tide_BO_full(particlesMap,p->index,child2->index,child1->index,child2->include_tidal_friction_terms,child2->include_tidal_bulges_precession_terms,child2->include_rotation_precession_terms,child2->minimum_eccentricity_for_tidal_precession,child2->tides_method);
                 }
-                else if (P_child2->tides_method == 2)
+                else if (child2->tides_method == 2)
                 {
-                    compute_EOM_equilibrium_tide(particlesMap,p->index,P_child2->index,P_child1->index,P_child2->include_tidal_friction_terms,P_child2->include_tidal_bulges_precession_terms,P_child2->include_rotation_precession_terms,P_child2->minimum_eccentricity_for_tidal_precession);
+                    compute_EOM_equilibrium_tide(particlesMap,p->index,child2->index,child1->index,child2->include_tidal_friction_terms,child2->include_tidal_bulges_precession_terms,child2->include_rotation_precession_terms,child2->minimum_eccentricity_for_tidal_precession);
                 }
 
             }
@@ -100,7 +100,7 @@ int compute_y_dot(realtype time, N_Vector y, N_Vector y_dot, void *data_)
 }
 
 
-void initialize_direct_integration_quantities(ParticlesMap *particlesMap)//, N_Vector &y, double delta_time, bool reset_ODE_quantities)
+void initialize_direct_integration_quantities(ParticlesMap *particlesMap)
 {
     
     bool KS_setup_required = false;

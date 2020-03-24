@@ -3,6 +3,7 @@
 extern "C"
 {
 void apply_user_specified_instantaneous_perturbation(ParticlesMap *particlesMap);
+void reset_instantaneous_perturbation_quantities(ParticlesMap *particlesMap);
 void update_masses_positions_and_velocities_of_all_bodies_instantaneous_perturbation(ParticlesMap *particlesMap);
 
 void update_position_vectors_external_particles(ParticlesMap *particlesMap, double time);

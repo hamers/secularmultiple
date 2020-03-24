@@ -19,6 +19,25 @@ void apply_user_specified_instantaneous_perturbation(ParticlesMap *particlesMap)
     update_orbital_vectors_in_binaries_from_positions_and_velocities(particlesMap);
 }
 
+void reset_instantaneous_perturbation_quantities(ParticlesMap *particlesMap)
+{
+    
+    ParticlesMapIterator it;
+    for (it = particlesMap->begin(); it != particlesMap->end(); it++)
+    {
+        Particle *p = (*it).second;
+        {
+            p->instantaneous_perturbation_delta_mass = 0.0;
+            p->instantaneous_perturbation_delta_X = 0.0;
+            p->instantaneous_perturbation_delta_Y = 0.0;
+            p->instantaneous_perturbation_delta_Z = 0.0;
+
+            p->instantaneous_perturbation_delta_VX = 0.0;
+            p->instantaneous_perturbation_delta_VY = 0.0;
+            p->instantaneous_perturbation_delta_VZ = 0.0;
+        }
+    }
+}
 
 void update_masses_positions_and_velocities_of_all_bodies_instantaneous_perturbation(ParticlesMap *particlesMap)
 {
@@ -77,7 +96,7 @@ void compute_EOM_binary_pairs_external_perturbation(ParticlesMap *particlesMap, 
     #endif
     
     double e = binary->e;
-    double e_p2 = binary->e_p2;
+    double e_P2 = binary->e_p2;
     
     double *e_vec = binary->e_vec;
     double *h_vec = binary->h_vec;
@@ -142,22 +161,12 @@ void compute_EOM_binary_pairs_external_perturbation(ParticlesMap *particlesMap, 
     double dB_n_m_i1_i2_de = 0.0; /* derivative of B-function w.r.t. e */
     
 
-    double e_p_array_even[HIGHEST_POWER_ECCP2_IN_B_TABLE];
-    double e_p_array_odd[HIGHEST_POWER_ECCP2_IN_B_TABLE];
-    e_p_array_even[0] = 1.0;
-    e_p_array_odd[1] = e;
     int index_B_eccp2;
-
-    for (index_B_eccp2=1; index_B_eccp2<= HIGHEST_POWER_ECCP2_IN_B_TABLE; index_B_eccp2++)
-    {
-
-        e_p_array_even[index_B_eccp2] = e_p_array_even[index_B_eccp2-1]*e_p2;
-        
-        if (index_B_eccp2>1)
-        {
-            e_p_array_odd[index_B_eccp2] = e_p_array_odd[index_B_eccp2-1]*e_p2;
-        }
-    }
+    double e_Peven,e_Podd; // e to a power which is even or odd
+    double e_P3 = e * e_P2;
+    double e_P4 = e * e_P3;
+    double e_P5 = e * e_P4;
+    double e_P6 = e * e_P5;
     
     double grad_e_vec_H[3],grad_j_vec_H[3];
     for (int i=0; i<3; i++)
@@ -213,11 +222,34 @@ void compute_EOM_binary_pairs_external_perturbation(ParticlesMap *particlesMap, 
         {
             B_lookup = B_TABLE[index_B][4+index_B_eccp2]; /* take into account offset for n,m,i1,i2 */
 
-            B_n_m_i1_i2 += B_lookup*e_p_array_even[index_B_eccp2];
-            if (index_B_eccp2>0)
+            if (index_B_eccp2 == 0)
             {
-                dB_n_m_i1_i2_de += 2.0*index_B_eccp2*B_lookup*e_p_array_odd[index_B_eccp2];
+                e_Peven = 1.0;
+                e_Podd = 0.0;
             }
+            else if (index_B_eccp2 == 1)
+            {
+                e_Peven = e_P2;
+                e_Podd = e;
+            }
+            else if (index_B_eccp2 == 2)
+            {
+                e_Peven = e_P4;
+                e_Podd = e_P3;
+            }
+            else if (index_B_eccp2 == 3)
+            {
+                e_Peven = e_P6;
+                e_Podd = e_P5;
+            }
+            else
+            {
+                printf("newtonian.cpp -- FATAL ERROR in constructing B-function \n");
+                exit(-1);
+            }
+            
+            B_n_m_i1_i2 += B_lookup * e_Peven;
+            dB_n_m_i1_i2_de += 2.0* ( (double) index_B_eccp2) * B_lookup * e_Podd;
         }
         //printf("test... n %d m %d i1 %d i2 %d e %g B %g \n",n,m,i1,i2,e,B_n_m_i1_i2);
         //printf("test D... n %d m %d i1 %d i2 %d e %g B %g \n",n,m,i1,i2,e,dB_n_m_i1_i2_de);

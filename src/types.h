@@ -551,8 +551,8 @@ class Particle
     double spin_vec_norm;
     double dmass_dt,dradius_dt;    
     
-    void set_ODE_quantities(double delta_time);
-    void reset_ODE_quantities();
+    //void set_ODE_quantities(double delta_time);
+    //void reset_ODE_quantities();
     
     /*********************
     /* binary properties *
@@ -682,7 +682,7 @@ class Particle
         spin_vec_x_dot = spin_vec_y_dot = spin_vec_z_dot = 0.0;
         mass_dot = radius_dot = radius_ddot = 0.0;
         
-        sample_orbital_phase_randomly = 0; /* 0: not sampled randomly */
+        sample_orbital_phase_randomly = false; /* false: not sampled randomly */
         instantaneous_perturbation_delta_mass = 0.0;
         instantaneous_perturbation_delta_X = instantaneous_perturbation_delta_Y = instantaneous_perturbation_delta_Z = 0.0;
         instantaneous_perturbation_delta_VX = instantaneous_perturbation_delta_VY = instantaneous_perturbation_delta_VZ = 0.0;
