@@ -478,21 +478,22 @@ void from_cartesian_to_orbital_vectors(double child1_mass, double child2_mass, d
 
 void get_position_and_velocity_vectors_from_particle(Particle *p, double r[3], double v[3])
 {
-    r[0] = p->X;
-    r[1] = p->Y;
-    r[2] = p->Z;
-    v[0] = p->VX;
-    v[1] = p->VY;
-    v[2] = p->VZ;
+    r[0] = p->R_vec[0];
+    r[1] = p->R_vec[1];
+    r[2] = p->R_vec[2];
+    v[0] = p->V_vec[0];
+    v[1] = p->V_vec[1];
+    v[2] = p->V_vec[2];
+
 }
 void set_position_and_velocity_vectors_in_particle(Particle *p,  double r[3], double v[3])
 {
-    p->X = r[0];
-    p->Y = r[1];
-    p->Z = r[2];
-    p->VX = v[0];
-    p->VY = v[1];
-    p->VZ = v[2];
+    p->R_vec[0] = r[0];
+    p->R_vec[1] = r[1];
+    p->R_vec[2] = r[2];
+    p->V_vec[0] = v[0];
+    p->V_vec[1] = v[1];
+    p->V_vec[2] = v[2];
 }
 
 }

@@ -43,12 +43,10 @@ int compute_y_dot(realtype time, N_Vector y, N_Vector y_dot, void *data_)
             compute_EOM_Newtonian_external_perturbations(time,particlesMap,p,&hamiltonian,&KS_V,false); 
 
             /* VRR-related perturbations */
-
             if (p->VRR_model > 0) /* 0: no VRR perturbation */
             {
                 compute_VRR_perturbations(particlesMap,p->index,time,&hamiltonian);
             }
-
 
             /* Pairwise PN corrections */
             if (p->include_pairwise_1PN_terms == true)
@@ -379,6 +377,11 @@ void set_up_derived_ODE_quantities(ParticlesMap *particlesMap)
         if (p->is_binary == false)
         {
             p->spin_vec_norm = norm3(p->spin_vec);
+            if (p->spin_vec_norm == 0.0)
+            {
+                p->spin_vec_norm = epsilon;
+            }
+
         }
         else
         {

@@ -543,8 +543,8 @@ class Particle
     int stellar_type;
     
     /* Absolute position/velocities (relative to an arbitrary inertial reference frame) */
-    double X,Y,Z;
-    double VX,VY,VZ;
+    double R_vec[3];
+    double V_vec[3];
 
     /* used in ODE solver only */
     double spin_vec[3],dspin_vec_dt[3]; 

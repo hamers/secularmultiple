@@ -50,13 +50,15 @@ void update_masses_positions_and_velocities_of_all_bodies_instantaneous_perturba
         if (body->is_binary == false)
         {
             body->mass += body->instantaneous_perturbation_delta_mass;
-            body->X += body->instantaneous_perturbation_delta_X;
-            body->Y += body->instantaneous_perturbation_delta_Y;
-            body->Z += body->instantaneous_perturbation_delta_Z;
 
-            body->VX += body->instantaneous_perturbation_delta_VX;
-            body->VY += body->instantaneous_perturbation_delta_VY;
-            body->VZ += body->instantaneous_perturbation_delta_VZ;
+            body->R_vec[0] += body->instantaneous_perturbation_delta_X;
+            body->R_vec[1] += body->instantaneous_perturbation_delta_Y;
+            body->R_vec[2] += body->instantaneous_perturbation_delta_Z;
+
+            body->V_vec[0] += body->instantaneous_perturbation_delta_VX;
+            body->V_vec[1] += body->instantaneous_perturbation_delta_VY;
+            body->V_vec[2] += body->instantaneous_perturbation_delta_VZ;
+
             
             //printf("test instantaneous_perturbation_delta_mass body %d delta m %g\n",body->index,body->instantaneous_perturbation_delta_mass);
           //printf("x %g y %g z %g \n",body->position_X,body->position_Y,body->position_Z);

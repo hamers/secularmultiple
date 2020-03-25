@@ -442,12 +442,13 @@ int get_absolute_position_and_velocity(int index, double *X, double *Y, double *
     }
   
     Particle * p = particlesMap[index];
-    *X = p->X;
-    *Y = p->Y;
-    *Z = p->Z;
-    *VX = p->VX;
-    *VY = p->VY;
-    *VZ = p->VZ;
+
+    *X = p->R_vec[0];
+    *Y = p->R_vec[1];
+    *Z = p->R_vec[2];
+    *VX = p->V_vec[0];
+    *VY = p->V_vec[1];
+    *VZ = p->V_vec[2];
    
     return 0;
 }
