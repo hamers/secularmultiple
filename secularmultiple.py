@@ -127,7 +127,7 @@ class SecularMultiple(object):
         self.lib.get_absolute_position_and_velocity.argtypes = (ctypes.c_int,ctypes.POINTER(ctypes.c_double),ctypes.POINTER(ctypes.c_double),ctypes.POINTER(ctypes.c_double),ctypes.POINTER(ctypes.c_double),ctypes.POINTER(ctypes.c_double),ctypes.POINTER(ctypes.c_double))
         self.lib.get_absolute_position_and_velocity.restype = ctypes.c_int
 
-        self.lib.set_PN_terms.argtypes = (ctypes.c_int,ctypes.c_bool,ctypes.c_bool)
+        self.lib.set_PN_terms.argtypes = (ctypes.c_int,ctypes.c_bool,ctypes.c_bool,ctypes.c_bool)
         self.lib.set_PN_terms.restype = ctypes.c_int
 
         self.lib.set_integration_method.argtypes = (ctypes.c_int,ctypes.c_int,ctypes.c_bool)
@@ -262,6 +262,7 @@ class SecularMultiple(object):
 
     def __update_particle_in_code(self,particle,set_instantaneous_perturbation_properties=False):
         flag = self.lib.set_mass(particle.index,particle.mass)
+        flag += self.lib.set_PN_terms(particle.index,particle.include_pairwise_1PN_terms,particle.include_pairwise_25PN_terms,particle.include_spin_orbit_1PN_terms)
 
         if self.enable_tides == True:
             flag += self.lib.set_tides_terms(particle.index,particle.include_tidal_friction_terms,particle.tides_method,particle.include_tidal_bulges_precession_terms,particle.include_rotation_precession_terms, \
@@ -284,7 +285,6 @@ class SecularMultiple(object):
             if particle.is_binary==True:
                 flag += self.lib.set_children(particle.index,particle.child1.index,particle.child2.index)
                 flag += self.lib.set_orbital_elements(particle.index,particle.a, particle.e, particle.TA, particle.INCL, particle.AP, particle.LAN, particle.sample_orbital_phase_randomly)
-                flag += self.lib.set_PN_terms(particle.index,particle.include_pairwise_1PN_terms,particle.include_pairwise_25PN_terms)
                 flag += self.lib.set_integration_method(particle.index,particle.integration_method,particle.KS_use_perturbing_potential)
             else:
                 flag += self.lib.set_radius(particle.index,particle.radius,particle.radius_dot)
@@ -530,7 +530,7 @@ class Particle(object):
             integration_method = 0, KS_use_perturbing_potential = True, \
             stellar_type=1, \
             spin_vec_x=0.0, spin_vec_y=0.0, spin_vec_z=0.0, \
-            include_pairwise_1PN_terms=False, include_pairwise_25PN_terms=False, \
+            include_pairwise_1PN_terms=False, include_pairwise_25PN_terms=False, include_spin_orbit_1PN_terms=False, \
             include_tidal_friction_terms=False, tides_method=1, include_tidal_bulges_precession_terms=False, include_rotation_precession_terms=False, \
             minimum_eccentricity_for_tidal_precession = 1.0e-5, tides_apsidal_motion_constant=0.19, tides_gyration_radius=0.08, tides_viscous_time_scale=1.0, tides_viscous_time_scale_prescription=0, \
             convective_envelope_mass=1.0, convective_envelope_radius=1.0, luminosity=1.0, \
@@ -624,6 +624,10 @@ class Particle(object):
         self.VRR_initial_time = VRR_initial_time
         self.VRR_final_time = VRR_final_time
 
+        self.include_pairwise_1PN_terms = include_pairwise_1PN_terms
+        self.include_pairwise_25PN_terms = include_pairwise_25PN_terms
+        self.include_spin_orbit_1PN_terms = include_spin_orbit_1PN_terms
+
         if is_binary==False:
             if mass==None:
                 raise RuntimeError('Error when adding particle: body should have mass specified') 
@@ -655,8 +659,6 @@ class Particle(object):
                     self.AP = AP
                     self.LAN = LAN
                     
-                    self.include_pairwise_1PN_terms = include_pairwise_1PN_terms
-                    self.include_pairwise_25PN_terms = include_pairwise_25PN_terms
                     self.integration_method = integration_method
                     self.KS_use_perturbing_potential = KS_use_perturbing_potential
     

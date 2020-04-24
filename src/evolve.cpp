@@ -44,7 +44,7 @@ int evolve(ParticlesMap *particlesMap, double start_time, double time_step, doub
 
     /* Warning: hardcoded parameters for ODE solver */
     //double abs_tol_spin_vec = 1.0e-12;
-    double abs_tol_spin_vec = 1.0e4;
+    double abs_tol_spin_vec = 1.0e-8;
     double abs_tol_e_vec = absolute_tolerance_eccentricity_vectors;
     //abs_tol_e_vec = 1.0e-10;
     double abs_tol_h_vec = 1.0e-2;

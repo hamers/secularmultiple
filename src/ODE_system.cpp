@@ -35,6 +35,8 @@ int compute_y_dot(realtype time, N_Vector y, N_Vector y_dot, void *data_)
         Particle *p = (*it_p).second;
         if (p->is_binary == true)
         {
+            Particle *child1 = (*particlesMap)[p->child1];
+            Particle *child2 = (*particlesMap)[p->child2];
             
             /* Newtonian gravitational point mass dynamics (internal system) */
             compute_EOM_Newtonian_for_particle(particlesMap,p,&hamiltonian,&KS_V,false);
@@ -57,11 +59,16 @@ int compute_y_dot(realtype time, N_Vector y, N_Vector y_dot, void *data_)
             {
                 compute_EOM_pairwise_25PN(particlesMap,p->index,&hamiltonian,false);
             }
+            if (child1->include_spin_orbit_1PN_terms == true)
+            {
+                compute_EOM_spin_orbit_coupling_1PN(particlesMap,p->index,child1->index,child2->index,&hamiltonian,false);
+            }
+            if (child2->include_spin_orbit_1PN_terms == true)
+            {
+                compute_EOM_spin_orbit_coupling_1PN(particlesMap,p->index,child2->index,child1->index,&hamiltonian,false);
+            }
             
             /* tidal friction (ad hoc) */
-            Particle *child1 = (*particlesMap)[p->child1];
-            Particle *child2 = (*particlesMap)[p->child2];
-
             if (child1->include_tidal_friction_terms == 1 || child1->include_tidal_bulges_precession_terms == 1 || child1->include_rotation_precession_terms == 1)
             {
                 if (child1->tides_method == 0 || child1->tides_method == 1)

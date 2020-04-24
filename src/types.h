@@ -583,7 +583,7 @@ class Particle
     double initial_mean_anomaly; /* used to track phases of averaged orbits */
     
     /* PN terms */
-    bool include_pairwise_1PN_terms,include_pairwise_25PN_terms;
+    bool include_pairwise_1PN_terms,include_pairwise_25PN_terms,include_spin_orbit_1PN_terms;
         
     /* tidal friction */
     int include_tidal_friction_terms,tides_method,include_tidal_bulges_precession_terms,include_rotation_precession_terms;
@@ -671,6 +671,7 @@ class Particle
         
         include_pairwise_1PN_terms = false;
         include_pairwise_25PN_terms = false;
+        include_spin_orbit_1PN_terms = false;
         include_tidal_friction_terms = false;
         include_tidal_bulges_precession_terms = false;
         include_rotation_precession_terms = false;

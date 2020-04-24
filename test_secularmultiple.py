@@ -1351,7 +1351,110 @@ class test_secularmultiple():
         print("Test passed")
 
         code.reset()
+
+    def test15(self,args):
+        print("Test spin-orbit terms in 2-body system")
+
+        particles = Tools.create_nested_multiple(2,[1.0, 1.0], [1.0], [0.99], [0.01], [0.01], [0.01])
+        binaries = [x for x in particles if x.is_binary == True]
+        bodies = [x for x in particles if x.is_binary == False]
+
+        for index,b in enumerate(bodies):
+            
+            
+            if index==0:
+                b.include_spin_orbit_1PN_terms = True
+                b.spin_vec_x = 1.0
+                b.spin_vec_y = 0.0
+                b.spin_vec_z = 0.0
+            if index==1:
+                b.include_spin_orbit_1PN_terms = False
+                b.spin_vec_x = 0.0
+                b.spin_vec_y = 2.0
+                b.spin_vec_z = 0.0
+
+        code = SecularMultiple()
+        code.add_particles(particles)
+
+        # Theoretical prediction #
+        CONST_G = code.CONST_G
+        CONST_C = code.CONST_C
+        a = binaries[0].a
+        e = binaries[0].e
+        m1 = bodies[0].mass
+        m2 = bodies[1].mass
+        M = binaries[0].mass
+        rg = CONST_G*M/(CONST_C**2)
+        P = 2.0*np.pi*np.sqrt(a**3/(CONST_G*M))
+        t_1PN = (1.0/3.0)*P*(1.0-e**2)*(a/rg)
+        mu = m1*m2/M
+        L = mu*np.sqrt(CONST_G*M*a*(1.0-e**2))
+        omega_deSitter = 2.0*CONST_G* ((1.0 + (3.0/4.0)*m2/m1)/(CONST_C**2*a**3*pow(1.0-e**2,3.0/2.0))) * L
+        t_deSitter = 2.0*np.pi/omega_deSitter
         
+        t = 0.0
+        N=1000
+        tend = t_deSitter ### integrate for exactly one precession timescale
+        dt=tend/float(N)
+
+        t_print_array = []
+        a_print_array = []
+        e_print_array = []
+        AP_print_array = []
+        Sx_print_array = [[] for x in range(len(bodies))]
+        Sy_print_array = [[] for x in range(len(bodies))]
+        Sz_print_array = [[] for x in range(len(bodies))]
+        S_print_array = [[] for x in range(len(bodies))]
+
+        while (t<tend):
+            t+=dt
+            code.evolve_model(t)
+
+            if args.verbose==True:
+                print( 't/Myr',t,'Sx',[b.spin_vec_x for b in bodies],'Sy',[b.spin_vec_y for b in bodies],'Sz',[b.spin_vec_z for b in bodies])
+            t_print_array.append(t)
+            a_print_array.append(binaries[0].a)
+            e_print_array.append(binaries[0].e)
+            AP_print_array.append(binaries[0].AP)
+            for index,b in enumerate(bodies):
+                S_print_array[index].append( np.sqrt( b.spin_vec_x**2 + b.spin_vec_y**2 + b.spin_vec_z**2) )
+                Sx_print_array[index].append(b.spin_vec_x)
+                Sy_print_array[index].append(b.spin_vec_y)
+                Sz_print_array[index].append(b.spin_vec_z)
+        
+        t_print_array = np.array(t_print_array)
+        a_print_array = np.array(a_print_array)
+        e_print_array = np.array(e_print_array)
+        AP_print_array = np.array(AP_print_array)
+        
+
+        ### Since the integration time is exactly one precession timescale, the final spins should be equal to the initial ones; at half the integration time, they should be equal to minus the initial ones ###
+        assert round(Sx_print_array[0][-1],4) == round(Sx_print_array[0][0],4)
+        assert round(Sx_print_array[0][500],4) == -round(Sx_print_array[0][0],4)
+        print("Test passed")
+
+        code.reset()
+                
+        if HAS_MATPLOTLIB == True and args.plot==True:
+            fig = pyplot.figure(figsize=(16,10))
+            plot1 = fig.add_subplot(2,1,1)
+
+            for index in range(len(bodies)):
+                plot1.plot(t_print_array*1.0e-6,S_print_array[index], color='k',label="$S$")
+                plot1.plot(t_print_array*1.0e-6,Sx_print_array[index], color='r',label="$S_x$")
+                plot1.plot(t_print_array*1.0e-6,Sy_print_array[index], color='g',label="$S_y$")
+                plot1.plot(t_print_array*1.0e-6,Sz_print_array[index], color='b',label="$S_z$")
+
+            fontsize = 15
+            plot1.set_xlabel("$t/\mathrm{Myr}$",fontsize=fontsize)
+            plot1.set_ylabel("$S$",fontsize=fontsize)
+            
+            handles,labels = plot1.get_legend_handles_labels()
+            plot1.legend(handles,labels,loc="upper left",fontsize=0.6*fontsize)
+
+            pyplot.show()
+
+
 def compute_e_and_j_hat_vectors(INCL,AP,LAN):
     sin_INCL = np.sin(INCL)
     cos_INCL = np.cos(INCL)
@@ -1376,7 +1479,7 @@ def compute_e_and_j_hat_vectors(INCL,AP,LAN):
 if __name__ == '__main__':
     args = parse_arguments()
     
-    N_tests = 14
+    N_tests = 15
     if args.test==0:
         tests = range(1,N_tests+1)
     else:
