@@ -164,7 +164,8 @@ void set_binary_masses_from_body_masses(ParticlesMap *particlesMap)
 
     /* set binary masses -- to ensure this happens correctly, do this from highest level to lowest level */
     ParticlesMapIterator it_p;
-    int highest_level = (*particlesMap)[0]->highest_level;
+
+    int highest_level = particlesMap->begin()->second->highest_level;
 
     int level=highest_level;
 
@@ -241,7 +242,7 @@ void set_positions_and_velocities(ParticlesMap *particlesMap) /* TO DO: add to n
     /*/ Go from the top of the system (level=0) downwards */
     
     ParticlesMapIterator it;
-    int highest_level = (*particlesMap)[0]->highest_level;
+    int highest_level = particlesMap->begin()->second->highest_level;
     int level = 0;
     while (level < highest_level)
     {
@@ -320,8 +321,9 @@ void update_masses_positions_and_velocities_of_all_binaries(ParticlesMap *partic
     double r_child2[3],v_child2[3];
     
     ParticlesMapIterator it_p;
-    int highest_level = (*particlesMap)[0]->highest_level;
+    int highest_level = particlesMap->begin()->second->highest_level;
     int level=highest_level;
+
     while (level > -1)
     {
         for (it_p = particlesMap->begin(); it_p != particlesMap->end(); it_p++)
@@ -374,7 +376,8 @@ void update_orbital_vectors_in_binaries_from_positions_and_velocities(ParticlesM
     /*/ Go from the top of the system (level=0) downwards */
     
     ParticlesMapIterator it;
-    int highest_level = (*particlesMap)[0]->highest_level;
+
+    int highest_level = particlesMap->begin()->second->highest_level;
     int level = 0;
     while (level < highest_level)
     {
