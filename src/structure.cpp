@@ -33,6 +33,10 @@ int determine_binary_parents_and_levels(ParticlesMap *particlesMap, int *N_bodie
             (*N_binaries)++;
             
             /* root finding */
+            if (P_p->check_for_stationary_eccentricity == true)
+            {
+                (*N_root_finding)++;
+            }
             if (P_p->check_for_secular_breakdown == true)
             {
                 (*N_root_finding)++;

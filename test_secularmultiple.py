@@ -1455,6 +1455,103 @@ class test_secularmultiple():
             pyplot.show()
 
 
+    def test16(self,args):
+        print("Test stationary eccentricity root finding")
+
+        particles = Tools.create_nested_multiple(3, [1.0,1.0e-3,40.0e-3],[6.0,100.0],[0.001,0.6],[0.0,65.0*np.pi/180.0],[45.0*np.pi/180.0,0.0],[0.0,0.0])
+        binaries = [x for x in particles if x.is_binary==True]
+        
+        code = SecularMultiple()
+        code.add_particles(particles)
+        inner_binary = binaries[0]
+        outer_binary = binaries[1]
+        
+        inner_binary.check_for_stationary_eccentricity = True
+        
+        e_print = []
+        INCL_print = []
+        rel_INCL_print = []
+        t_print = []
+        
+        start = time.time()
+    
+        t = 0.0
+        N = 1000
+        tend = 3.0e6
+        t_print_indices_min = []
+        t_print_indices_max = []
+
+        i_print = 0
+        dt = tend/float(N)
+        while t<=tend:
+            t+=dt
+            code.evolve_model(t)
+            t = code.model_time
+            flag = code.flag
+            
+            if args.verbose==True:
+                print( 't',t,'es',[x.e for x in binaries],'INCL_parent',inner_binary.INCL_parent,"flag",flag,"max e",[x.maximum_eccentricity_has_occurred for x in binaries],"min e",[x.minimum_eccentricity_has_occurred for x in binaries])
+
+            rel_INCL_print.append(inner_binary.INCL_parent)
+            e_print.append(inner_binary.e)
+            INCL_print.append(inner_binary.INCL)
+            t_print.append(t)
+            i_print += 1
+        
+            if flag==2:
+                if inner_binary.minimum_eccentricity_has_occurred == True:
+                    t_print_indices_min.append(i_print-1)
+                if inner_binary.maximum_eccentricity_has_occurred == True:
+                    t_print_indices_max.append(i_print-1)
+
+                inner_binary.minimum_eccentricity_has_occurred = False
+                inner_binary.maximum_eccentricity_has_occurred = False
+
+                ### Integrate for a short time without stationary eccentricity root finding, to avoid "getting stuck" and finding the same stationary point over and over again. ###
+                inner_binary.check_for_stationary_eccentricity = False
+                code.evolve_model(t+dt)
+                t=code.model_time
+                inner_binary.check_for_stationary_eccentricity = True
+                
+            
+        if args.verbose==True:
+            print('wall time',time.time()-start)
+        
+        t_print = np.array(t_print)
+        rel_INCL_print = np.array(rel_INCL_print)
+        e_print = np.array(e_print)
+        
+        ### Check times of first maximum and minimum ###
+        Nr = 1
+        assert(round(t_print[t_print_indices_max[0]],Nr) == 577762.4)
+        assert (round(t_print[t_print_indices_min[0]],Nr) == 836755.1)
+
+        print("Test passed")
+
+        code.reset()
+                
+        if HAS_MATPLOTLIB==True and args.plot==True:
+            fig=pyplot.figure()
+            plot1=fig.add_subplot(2,1,1)
+            plot2=fig.add_subplot(2,1,2,yscale="log")
+            plot1.plot(1.0e-6*t_print,rel_INCL_print*180.0/np.pi)
+            plot2.plot(1.0e-6*t_print,1.0-e_print)
+            
+            plot1.scatter(1.0e-6*t_print[t_print_indices_min],rel_INCL_print[t_print_indices_min]*180.0/np.pi,color='b',label="$\mathrm{Local\,minima}$")
+            plot1.scatter(1.0e-6*t_print[t_print_indices_max],rel_INCL_print[t_print_indices_max]*180.0/np.pi,color='r',label="$\mathrm{Local\,maxima}$")
+
+            plot2.scatter(1.0e-6*t_print[t_print_indices_min],1.0-e_print[t_print_indices_min],color='b',label="$\mathrm{Local\,}e_\mathrm{in}\mathrm{-minima}$")
+            plot2.scatter(1.0e-6*t_print[t_print_indices_max],1.0-e_print[t_print_indices_max],color='r',label="$\mathrm{Local\,}e_\mathrm{in}\mathrm{-maxima}$")
+            
+            plot2.set_xlabel("$t/\mathrm{Myr}$")
+            plot1.set_ylabel("$i_\mathrm{rel}/\mathrm{deg}$")
+            plot2.set_ylabel("$1-e_\mathrm{in}$")
+            
+            handles,labels = plot2.get_legend_handles_labels()
+            plot2.legend(handles,labels,loc="best",fontsize=12)
+
+            pyplot.show()
+
 def compute_e_and_j_hat_vectors(INCL,AP,LAN):
     sin_INCL = np.sin(INCL)
     cos_INCL = np.cos(INCL)
@@ -1479,7 +1576,7 @@ def compute_e_and_j_hat_vectors(INCL,AP,LAN):
 if __name__ == '__main__':
     args = parse_arguments()
     
-    N_tests = 15
+    N_tests = 16
     if args.test==0:
         tests = range(1,N_tests+1)
     else:

@@ -36,6 +36,22 @@ int root_finding_functions(realtype time, N_Vector y, realtype *root_functions, 
         Particle *P_p = (*it_p).second;
         if (P_p->is_binary == true)
         {
+            if (P_p->check_for_stationary_eccentricity == true)
+            {
+                #ifdef DEBUG
+                printf("check_for_stationary_eccentricity\n");
+                #endif
+                
+                double hamiltonian=0.0;
+                double KS_V=0.0;
+                compute_EOM_Newtonian_for_particle(particlesMap,P_p,&hamiltonian,&KS_V,false);
+                                
+                double de_dt = dot3(P_p->e_vec_unit,P_p->de_vec_dt);  
+                
+                root_functions[i_root] = de_dt;
+                
+                i_root++;
+            }
             if (P_p->check_for_secular_breakdown == true)
             {
                 #ifdef DEBUG
@@ -460,6 +476,19 @@ int read_root_finding_data(ParticlesMap *particlesMap, int *roots_found)
         Particle *P_p = (*it_p).second;
         if (P_p->is_binary == true)
         {
+            if (P_p->check_for_stationary_eccentricity == true)
+            {
+                if (roots_found[i_root] == -1)
+                {
+                    P_p->maximum_eccentricity_has_occurred = true;
+                    i_root++;
+                }
+                else if (roots_found[i_root] == 1)
+                {
+                    P_p->minimum_eccentricity_has_occurred = true;
+                    i_root++;
+                }
+            }
             if (P_p->check_for_secular_breakdown == true)
             {
                 if FOUND_ROOT
@@ -528,6 +557,13 @@ int check_for_initial_roots(ParticlesMap *particlesMap)
         Particle *P_p = (*it_p).second;
         if (P_p->is_binary == true)
         {
+            if (P_p->check_for_stationary_eccentricity == true)
+            {
+                if (P_p->minimum_eccentricity_has_occurred == true or P_p->maximum_eccentricity_has_occurred == true)
+                {
+                    N_root_found++;
+                }
+            }
             if (P_p->check_for_secular_breakdown == true)
             {
                 if (P_p->secular_breakdown_has_occurred == true)

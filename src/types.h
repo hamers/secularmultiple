@@ -605,6 +605,7 @@ class Particle
     double check_for_minimum_periapse_distance_value;
     bool check_for_RLOF_at_pericentre,check_for_RLOF_at_pericentre_use_sepinsky_fit,RLOF_at_pericentre_has_occurred;
     bool check_for_GW_condition,GW_condition_has_occurred;    
+    bool check_for_stationary_eccentricity,minimum_eccentricity_has_occurred,maximum_eccentricity_has_occurred;
 
     /* used in ODE solver only */
     double e_vec[3],h_vec[3];
@@ -659,6 +660,7 @@ class Particle
         check_for_minimum_periapse_distance = false;
         check_for_RLOF_at_pericentre = false;
         check_for_GW_condition = false;
+        check_for_stationary_eccentricity = false;
         
         secular_breakdown_has_occurred = false;
         dynamical_instability_has_occurred = false;
@@ -666,6 +668,8 @@ class Particle
         minimum_periapse_distance_has_occurred = false;
         RLOF_at_pericentre_has_occurred = false;
         GW_condition_has_occurred = false;
+        minimum_eccentricity_has_occurred = false;
+        maximum_eccentricity_has_occurred = false;
         
         stellar_type = 0;
         
