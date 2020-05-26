@@ -757,6 +757,42 @@ class Tools(object):
         
         return particles
 
+    @staticmethod
+    def create_2p2_quadruple_system(masses,semimajor_axes,eccentricities,inclinations,arguments_of_pericentre,longitudes_of_ascending_node,radii=None):
+        """
+        Create a 2+2 quadruple system.
+        Masses should contain the four masses.
+        The other arguments should be length 3 arrays; first two entries: the two inner binaries; third entry: outer binary.
+        """
+
+        N_bodies = 4
+        N_binaries = N_bodies-1
+
+        particles = []
+
+        ### Add the bodies ###
+        for index in range(N_bodies):
+            particle = Particle(is_binary=False,mass=masses[index])
+            if radii is not None:
+                particle.radius = radii[index]
+            particles.append(particle)
+
+        ### Add the binaries ###
+        for index in range(N_binaries):
+            if index==0:
+                child1 = particles[0]
+                child2 = particles[1]
+            elif index==1:
+                child1 = particles[2]
+                child2 = particles[3]
+            elif index==2:
+                child1 = particles[4]
+                child2 = particles[5]
+
+            particle = Particle(is_binary=True,child1=child1,child2=child2,a=semimajor_axes[index],e=eccentricities[index],INCL=inclinations[index],AP=arguments_of_pericentre[index],LAN=longitudes_of_ascending_node[index])
+            particles.append(particle)
+        
+        return particles
 
     @staticmethod
     def compute_mutual_inclination(INCL_k,INCL_l,LAN_k,LAN_l):
