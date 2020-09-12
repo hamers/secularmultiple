@@ -682,6 +682,12 @@ class test_secularmultiple():
                     print( 'root found at t=',t_root)
                 break
         
+        assert all([x.secular_breakdown_has_occurred for x in particles]) == False
+        assert all([x.dynamical_instability_has_occurred for x in particles]) == False
+        assert all([x.RLOF_at_pericentre_has_occurred for x in particles]) == False
+        assert all([x.minimum_periapse_distance_has_occurred for x in particles]) == False
+        assert binaries[0].physical_collision_or_orbit_crossing_has_occurred == True
+
         N_r = 5
         assert round(a_print_array[-1]*(1.0 - e_print_array[-1]),N_r) == round(2.0*R,N_r)
         print("Test passed")
@@ -702,6 +708,85 @@ class test_secularmultiple():
             pyplot.show()
 
     def test8(self,args):
+        print("Test RLOF in 3-body system")
+
+        code = SecularMultiple()
+        
+        particles = Tools.create_nested_multiple(3,[1.0, 1.2, 0.9], [1.0, 100.0], [0.1, 0.5], [0.01, 80.0*np.pi/180.0], [0.01, 0.01], [0.01, 0.01])
+        bodies = [x for x in particles if x.is_binary==False]
+        binaries = [x for x in particles if x.is_binary==True]
+
+        binaries[0].check_for_physical_collision_or_orbit_crossing = True
+        bodies[0].check_for_RLOF_at_pericentre = True
+        R = 0.03 ### AU
+        for body in bodies:
+            body.radius = R
+
+        code.add_particles(particles)
+
+        t = 0.0
+        dt = 1.0e4
+        tend = 1.0e6
+        t_root = 0.0
+        
+        t_print_array = []
+        a_print_array = []
+        e_print_array = []
+
+        while (t<tend):
+            t+=dt
+            code.evolve_model(t)
+            flag = code.flag
+
+            if args.verbose==True:
+                print("="*50)
+                print("t/Myr",t*1e-6,"rp/AU",binaries[0].a*(1.0 - binaries[0].e) )
+                print( 'secular_breakdown_has_occurred',binaries[0].secular_breakdown_has_occurred)
+                print( 'dynamical_instability_has_occurred',binaries[0].dynamical_instability_has_occurred)
+                print( 'physical_collision_or_orbit_crossing_has_occurred',binaries[0].physical_collision_or_orbit_crossing_has_occurred)
+                print( 'minimum_periapse_distance_has_occurred',binaries[0].minimum_periapse_distance_has_occurred)
+                print( 'RLOF_at_pericentre_has_occurred',bodies[0].RLOF_at_pericentre_has_occurred)
+
+            t_print_array.append(t*1.0e-6)
+            a_print_array.append(binaries[0].a)
+            e_print_array.append(binaries[0].e)
+
+            if flag == 2:
+                t_root = code.model_time
+                if args.verbose==True:
+                    print( 'root found at t=',t_root)
+                break
+
+        assert all([x.secular_breakdown_has_occurred for x in particles]) == False
+        assert all([x.dynamical_instability_has_occurred for x in particles]) == False
+        assert all([x.physical_collision_or_orbit_crossing_has_occurred for x in particles]) == False
+        assert all([x.minimum_periapse_distance_has_occurred for x in particles]) == False
+        assert bodies[0].RLOF_at_pericentre_has_occurred == True
+
+        q = bodies[0].mass/bodies[1].mass
+        f_q = 0.49*pow(q,2.0/3.0)/( 0.6*pow(q,2.0/3.0) + np.log(1.0 + pow(q,1.0/3.0)) )
+        r_RLOF = bodies[0].radius/f_q
+        
+        N_r = 10
+        assert round(a_print_array[-1]*(1.0 - e_print_array[-1]),N_r) == round(r_RLOF,N_r)
+        print("Test passed")
+
+        code.reset()
+        
+        if HAS_MATPLOTLIB == True and args.plot==True:
+            a_print_array = np.array(a_print_array)
+            e_print_array = np.array(e_print_array)
+            
+            fig = pyplot.figure()
+            plot = fig.add_subplot(1,1,1)
+            plot.plot(t_print_array,a_print_array*(1.0-e_print_array))
+            plot.axhline(y = bodies[0].radius + bodies[1].radius,color='k')
+            plot.set_ylabel("$r_\mathrm{p}/\mathrm{AU}$")
+            plot.set_xlabel("$t/\mathrm{Myr}$")
+
+            pyplot.show()
+            
+    def test9(self,args):
         print("Test minimum periapse occurrence")
 
         code = SecularMultiple()
@@ -737,7 +822,7 @@ class test_secularmultiple():
                 print( 'dynamical_instability_has_occurred',binaries[0].dynamical_instability_has_occurred)
                 print( 'physical_collision_or_orbit_crossing_has_occurred',binaries[0].physical_collision_or_orbit_crossing_has_occurred)
                 print( 'minimum_periapse_distance_has_occurred',binaries[0].minimum_periapse_distance_has_occurred)
-                print( 'RLOF_at_pericentre_has_occurred',binaries[0].RLOF_at_pericentre_has_occurred)
+                print( 'RLOF_at_pericentre_has_occurred',bodies[0].RLOF_at_pericentre_has_occurred)
 
             t_print_array.append(t*1.0e-6)
             a_print_array.append(binaries[0].a)
@@ -749,6 +834,12 @@ class test_secularmultiple():
                     print( 'root found at t=',t_root)
                 break
         
+        assert all([x.secular_breakdown_has_occurred for x in particles]) == False
+        assert all([x.dynamical_instability_has_occurred for x in particles]) == False
+        assert all([x.physical_collision_or_orbit_crossing_has_occurred for x in particles]) == False
+        assert all([x.RLOF_at_pericentre_has_occurred for x in particles]) == False
+        assert binaries[0].minimum_periapse_distance_has_occurred == True
+
         N_r = 5
         assert round(a_print_array[-1]*(1.0 - e_print_array[-1]),N_r) == round(rp_min,N_r)
         print("Test passed")
@@ -768,7 +859,7 @@ class test_secularmultiple():
 
             pyplot.show()
 
-    def test9(self,args):
+    def test10(self,args):
         print("Test adiabatic mass loss")
 
         code = SecularMultiple()
@@ -859,7 +950,7 @@ class test_secularmultiple():
             pyplot.show()
 
 
-    def test10(self,args):
+    def test11(self,args):
         print("Test hybrid integration")
 
         m1=1.0
@@ -983,7 +1074,7 @@ class test_secularmultiple():
             
             pyplot.show()
 
-    def test11(self,args):
+    def test12(self,args):
         print("Test flybys module: instantaneous change -- SNe in binary")
 
         code = SecularMultiple()
@@ -1059,7 +1150,7 @@ class test_secularmultiple():
 
         code.reset()
         
-    def test12(self,args):
+    def test13(self,args):
         print("Test flybys module: instantaneous change -- SNe in triple")
 
         code = SecularMultiple()
@@ -1182,7 +1273,7 @@ class test_secularmultiple():
 
         code.reset()
         
-    def test13(self,args):
+    def test14(self,args):
         print("Test flybys module: numerically integrating over perturber's orbit")
 
         code = SecularMultiple()
@@ -1285,7 +1376,7 @@ class test_secularmultiple():
             
             pyplot.show()
     
-    def test14(self,args):
+    def test15(self,args):
         print("Test flybys module: using analytic formulae")
 
         code = SecularMultiple()
@@ -1352,7 +1443,7 @@ class test_secularmultiple():
 
         code.reset()
 
-    def test15(self,args):
+    def test16(self,args):
         print("Test spin-orbit terms in 2-body system")
 
         particles = Tools.create_nested_multiple(2,[1.0, 1.0], [1.0], [0.99], [0.01], [0.01], [0.01])
@@ -1455,7 +1546,7 @@ class test_secularmultiple():
             pyplot.show()
 
 
-    def test16(self,args):
+    def test17(self,args):
         print("Test stationary eccentricity root finding")
 
         particles = Tools.create_nested_multiple(3, [1.0,1.0e-3,40.0e-3],[6.0,100.0],[0.001,0.6],[0.0,65.0*np.pi/180.0],[45.0*np.pi/180.0,0.0],[0.0,0.0])
@@ -1576,7 +1667,7 @@ def compute_e_and_j_hat_vectors(INCL,AP,LAN):
 if __name__ == '__main__':
     args = parse_arguments()
     
-    N_tests = 16
+    N_tests = 17
     if args.test==0:
         tests = range(1,N_tests+1)
     else:
