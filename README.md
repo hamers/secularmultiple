@@ -13,6 +13,7 @@ Includes routines for external perturbations (flybys & supernovae).
 If you use this code for work in scientific publications, please cite:
 https://ui.adsabs.harvard.edu/abs/2016MNRAS.459.2827H (the original paper)
 https://ui.adsabs.harvard.edu/abs/2018MNRAS.476.4139H (updates with external perturbations)
+https://ui.adsabs.harvard.edu/abs/2020MNRAS.494.5492H (updates with suborbital effects).
 
 A C++ compiler is required, as well as Python (2/3) for the Python interface. Make sure to first compile the code using `make`. It will compile using the system's default C++ compiler (if you want to change this, you could modify the Makefile). 
 
