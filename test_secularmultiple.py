@@ -318,11 +318,10 @@ class test_secularmultiple():
 
         I = rg*M*R**2
         alpha = I/(mu*a0**2)
+        
         T = R**3/(CONST_G*M*tau)
-        t_V = 3.0*(1.0 + 1.0/k_L)*T
-        if args.verbose==True:
-            print( 't_V',t_V,'M',M,'R',R)
-
+        t_V = 3.0*(1.0 + 2.0*k_AM)**2*T/k_AM
+        
         particles[0].include_tidal_friction_terms = False
         
         particles[1].tides_method = 1
@@ -335,7 +334,6 @@ class test_secularmultiple():
         particles[1].tides_viscous_time_scale = t_V
         particles[1].tides_gyration_radius = rg
 
-        tD = M*aF**8/(3.0*k_L*tau*CONST_G*m_per*(M+m_per)*R**5)
         particles[2].check_for_physical_collision_or_orbit_crossing = True
 
         code.add_particles(particles)
