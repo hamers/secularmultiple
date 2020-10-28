@@ -56,8 +56,6 @@ double from_k_AM_div_T_to_t_V(double k_AM_div_T, double apsidal_motion_constant)
 {
     double f = 2.0*apsidal_motion_constant + 1.0;
     return 3.0 * f * f / k_AM_div_T;
-
-    //return c_3div2*(2.0*apsidal_motion_constant + 1.0)/k_AM_div_T;
 }
 
 double compute_t_V(Particle *star, Particle *companion, double semimajor_axis)
